@@ -10,8 +10,8 @@ using NumericTraits = uint32_t;
 
 constexpr NumericTraits SIGNED = 0x00000001;
 
-template <unsigned bits, NumericTraits traits>
-constexpr auto FastestInteger()
+template <NumericTraits traits, unsigned bits>
+constexpr auto FastestIntegralType()
 {
   if constexpr ((traits & SIGNED) == SIGNED && bits > 31 && bits <= 63) {
     return std::int_fast64_t(0);
@@ -46,11 +46,11 @@ constexpr auto FastestInteger()
   }
 }
 
-template <unsigned bits, int power, NumericTraits traits = SIGNED>
+template <NumericTraits traits, unsigned bits, int power>
 class FixedPoint
 {
 private:
-  using IntegralType = decltype(FastestInteger<bits, traits>());
+  using IntegralType = decltype(FastestIntegralType<traits, bits>());
   IntegralType data = 0;
 
 public:
@@ -64,35 +64,34 @@ public:
 
   IntegralType getData() const { return data; }
 
-  FixedPoint<bits, power, traits>() = default;
-  FixedPoint<bits, power, traits>(IntegralType const & data) : data(data) {}
+  FixedPoint<traits, bits, power>() = default;
+  FixedPoint<traits, bits, power>(IntegralType const & data) : data(data) {}
 
-  template <unsigned bits_a, int power_a, unsigned bits_b, int power_b>
-  friend decltype(auto) operator*(FixedPoint<bits_a, power_a> const & lhs, FixedPoint<bits_b, power_b> const & rhs);
+  template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
+  friend decltype(auto) operator*(FixedPoint<traits_a, bits_a, power_a> const & lhs, FixedPoint<traits_b, bits_b, power_b> const & rhs);
 
-  template <unsigned bits_a, int power_a, unsigned bits_b, int power_b>
-  friend decltype(auto) operator*(FixedPoint<bits_a,power_a> && lhs, FixedPoint<bits_b,power_b> && rhs);
+  template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
+  friend decltype(auto) operator*(FixedPoint<traits_a, bits_a, power_a> && lhs, FixedPoint<traits_b, bits_b, power_b> && rhs);
 
 };
 
-template <unsigned bits_a, int power_a, unsigned bits_b, int power_b>
-decltype(auto) operator*(FixedPoint<bits_a,power_a> const & lhs, FixedPoint<bits_b,power_b> const & rhs)
+template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
+decltype(auto) operator*(FixedPoint<traits_a, bits_a, power_a> const & lhs, FixedPoint<traits_b, bits_b, power_b> const & rhs)
 {
   if constexpr (bits_a > bits_b) {
-    return FixedPoint<bits_a, power_a>(lhs.data * rhs.data);
+    return FixedPoint<traits_a, bits_a, power_a>(lhs.data * rhs.data);
   } else {
-    return FixedPoint<bits_b, power_b>(lhs.data * rhs.data);
+    return FixedPoint<traits_b, bits_b, power_b>(lhs.data * rhs.data);
   }
 }
 
-// the following works
-template <unsigned bits_a, int power_a, unsigned bits_b, int power_b>
-decltype(auto) operator*(FixedPoint<bits_a,power_a> && lhs, FixedPoint<bits_b,power_b> && rhs)
+template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
+decltype(auto) operator*(FixedPoint<traits_a, bits_a, power_a> && lhs, FixedPoint<traits_b, bits_b, power_b> && rhs)
 {
   if constexpr (bits_a > bits_b) {
-    return FixedPoint<bits_a, power_a>(lhs.data * rhs.data);
+    return FixedPoint<traits_a, bits_a, power_a>(lhs.data * rhs.data);
   } else {
-    return FixedPoint<bits_b, power_b>(lhs.data * rhs.data);
+    return FixedPoint<traits_b, bits_b, power_b>(lhs.data * rhs.data);
   }
 }
 

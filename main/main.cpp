@@ -12,11 +12,11 @@ using namespace machine;
 
 int main() 
 {
-  std::cout << std::string(std::is_same_v<int32_t, decltype(FastestInteger<32, true>())> ? "int32_t" : "not int32_t") << std::endl;
-  std::cout << std::string(std::is_same_v<int64_t, decltype(FastestInteger<32, true>())> ? "int64_t" : "not int64_t") << std::endl;
+  std::cout << std::string(std::is_same_v<int32_t, decltype(FastestIntegralType<SIGNED, 32>())> ? "int32_t" : "not int32_t") << std::endl;
+  std::cout << std::string(std::is_same_v<int64_t, decltype(FastestIntegralType<SIGNED, 32>())> ? "int64_t" : "not int64_t") << std::endl;
 
-  FixedPoint<63, 3> steve(9);
-  FixedPoint<13, 5> nenny(5);
+  machine::FixedPoint<SIGNED, 63, 3> steve(9);
+  FixedPoint<machine::SIGNED, 13, 5> nenny(5);
 
   auto george = steve * nenny;
 
