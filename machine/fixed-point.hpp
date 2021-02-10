@@ -78,21 +78,15 @@ public:
 template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
 decltype(auto) operator*(FixedPoint<traits_a, bits_a, power_a> const & lhs, FixedPoint<traits_b, bits_b, power_b> const & rhs)
 {
-  if constexpr (bits_a > bits_b) {
-    return FixedPoint<traits_a, bits_a, power_a>(lhs.data * rhs.data);
-  } else {
-    return FixedPoint<traits_b, bits_b, power_b>(lhs.data * rhs.data);
-  }
+    return FixedPoint<traits_a | traits_b, bits_a + bits_b, power_a + power_b>(
+        static_cast<decltype(FastestIntegralType<traits_a | traits_b, bits_a + bits_b>())>(lhs.data) * rhs.data);
 }
 
 template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
 decltype(auto) operator*(FixedPoint<traits_a, bits_a, power_a> && lhs, FixedPoint<traits_b, bits_b, power_b> && rhs)
 {
-  if constexpr (bits_a > bits_b) {
-    return FixedPoint<traits_a, bits_a, power_a>(lhs.data * rhs.data);
-  } else {
-    return FixedPoint<traits_b, bits_b, power_b>(lhs.data * rhs.data);
-  }
+    return FixedPoint<traits_a | traits_b, bits_a + bits_b, power_a + power_b>(
+        static_cast<decltype(FastestIntegralType<traits_a | traits_b, bits_a + bits_b>())>(lhs.data) * rhs.data);
 }
 
 }; // namespace machine
