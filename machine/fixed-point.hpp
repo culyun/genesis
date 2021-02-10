@@ -56,6 +56,50 @@ constexpr auto FastestIntegralType()
   static_assert((traits & SIGNED) == SIGNED || bits <= 64, "\n\n\33[1;31mError: No UNSIGNED integral types can store more than 64 data bits!\33[0m\n\n");
 }
 
+template <NumericTraits traits, unsigned bits>
+constexpr auto SmallestIntegralType()
+{
+  // Build time type inference
+
+  if constexpr ((traits & SIGNED) == SIGNED && bits > 31 && bits <= 63) {
+    return std::int_least64_t(0);
+  }
+
+  if constexpr((traits & SIGNED) != SIGNED && bits > 32 && bits <= 64) {
+    return std::uint_least64_t(0);
+  }
+
+  if constexpr((traits & SIGNED) == SIGNED && bits > 15 && bits <= 31) {
+    return std::int_least32_t(0);
+  }
+
+  if constexpr((traits & SIGNED) != SIGNED && bits > 16 && bits <= 32) {
+    return std::uint_least32_t(0);
+  }
+
+  if constexpr((traits & SIGNED) == SIGNED && bits > 7 && bits <= 15) {
+    return std::int_least16_t(0);
+  }
+
+  if constexpr((traits & SIGNED) != SIGNED && bits > 8 && bits <= 16) {
+    return std::uint_least16_t(0);
+  }
+
+  if constexpr((traits & SIGNED) == SIGNED && bits <= 7) {
+    return std::int_least8_t(0);
+  }
+
+  if constexpr((traits & SIGNED) != SIGNED && bits <= 8) {
+    return std::uint_least8_t(0);
+  }
+
+  // Build time errors
+
+  static_assert((traits & SIGNED) != SIGNED || bits <= 63, "\n\n\33[1;31mError: No SIGNED integral types can store more than 63 data bits!\33[0m\n\n");
+
+  static_assert((traits & SIGNED) == SIGNED || bits <= 64, "\n\n\33[1;31mError: No UNSIGNED integral types can store more than 64 data bits!\33[0m\n\n");
+}
+
 template <NumericTraits traits, unsigned bits, int power>
 class FixedPoint
 {
@@ -67,12 +111,12 @@ public:
   static constexpr auto Bits = bits;
   static constexpr auto Power = power;
 
+  using QNumberType = decltype(SmallestIntegralType<traits, bits + (power > 0 ? power : 0)>());
 
-  // Implicit IntegralType Conversion
-  //operator IntegralType() const { return power == 0 ? data : power > 0 ? data << power : data >> -power; }
-  //operator IntegralType() const { return data; }
+  QNumberType getQNumber() const { return power <= 0 ? data : data << power; }
 
-  IntegralType getData() const { return data; }
+  // Implicit QNumberType Conversion
+  operator QNumberType() const { return getQNumber(); }
 
   FixedPoint<traits, bits, power>() = default;
   FixedPoint<traits, bits, power>(IntegralType const & data) : data(data) {}
