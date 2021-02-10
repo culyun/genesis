@@ -4,6 +4,8 @@
 #include <limits>
 #include <type_traits>
 
+#include <cassert>
+
 namespace machine {
 
 using NumericTraits = uint32_t;
@@ -13,6 +15,8 @@ constexpr NumericTraits SIGNED = 0x00000001;
 template <NumericTraits traits, unsigned bits>
 constexpr auto FastestIntegralType()
 {
+  // Build time type inference
+
   if constexpr ((traits & SIGNED) == SIGNED && bits > 31 && bits <= 63) {
     return std::int_fast64_t(0);
   }
@@ -44,6 +48,12 @@ constexpr auto FastestIntegralType()
   if constexpr((traits & SIGNED) != SIGNED && bits <= 8) {
     return std::uint_fast8_t(0);
   }
+
+  // Build time errors
+
+  static_assert((traits & SIGNED) != SIGNED || bits <= 63, "\n\n\33[1;31mError: No SIGNED integral types can store more than 63 data bits!\33[0m\n\n");
+
+  static_assert((traits & SIGNED) == SIGNED || bits <= 64, "\n\n\33[1;31mError: No UNSIGNED integral types can store more than 64 data bits!\33[0m\n\n");
 }
 
 template <NumericTraits traits, unsigned bits, int power>
