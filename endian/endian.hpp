@@ -8,9 +8,8 @@
 namespace culyun { namespace endian {
 
 template<typename IntegralType>
-concept EndianIntegral = requires(IntegralType) {
+concept EndianIntegral =
     std::is_integral_v<IntegralType> && (sizeof(IntegralType) == 2 || sizeof(IntegralType) == 4 || sizeof(IntegralType) == 8);
-};
 
 template<typename IntegralType>
 requires EndianIntegral<IntegralType>
