@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <limits>
 #include <type_traits>
+#include <algorithm>
 
 #include <cassert>
 
@@ -118,6 +119,53 @@ public:
   // Implicit QNumberType Conversion
   operator QNumberType() const { return getQNumber(); }
 
+  static constexpr int NumberIntegerBits() const { return static_cast<int>(bits) + power; }
+
+  static constexpr bool HasIntegerPart() const { return NumberIntegerBits() > 0; }
+
+  auto getIntegerPart() const {
+    if constexpr (NumberIntegerBits() > 0) {
+      decltype(SmallestIntegralType<traits, NumberIntegerBits()) result;
+
+      if (power == 0) {
+        result = data;
+      } else {
+        result = power > 0 ? data << power : data >> static_cast<unsigned>(-power);
+      }
+
+      return result;
+    } else {
+      return 0;
+    }
+  }
+
+  static constexpr int NumberFractionalBits() const { return std::min(static_cast<int>(bits) - (static_cast<int>(bits) + power), static_cast<int>(bits)); }
+
+  static constexpr bool HasFractionalPart() const { return NumberFractionalBits() > 0; }
+
+  auto getFractionalPart() const {
+    if constexpr (NumberFractionalBits() > 0) {
+      decltype(SmallestIntegralType<traits, NumberFractionalBits()) result;
+
+      result = ((1 << NumberFractionalBits()) - 1) & data;
+
+      return result;
+    } else {
+      return 0;
+    }
+  }
+
+  using FractionalPartType = decltype(SmallestIntegralType<traits, bits - power>());
+
+  FractionalPartType getIntegerPart() const {
+    if (power == 0) return data;
+    if (power > 0) {
+      return data << power;
+    } else {
+      return data >> -power;
+    }
+  }
+
   FixedPoint<traits, bits, power>() = default;
   FixedPoint<traits, bits, power>(IntegralType const & data) : data(data) {}
 
@@ -127,20 +175,40 @@ public:
   template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
   friend decltype(auto) operator*(FixedPoint<traits_a, bits_a, power_a> && lhs, FixedPoint<traits_b, bits_b, power_b> && rhs);
 
+  template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
+  friend decltype(auto) operator/(FixedPoint<traits_a, bits_a, power_a> const & lhs, FixedPoint<traits_b, bits_b, power_b> const & rhs);
+
+  template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
+  friend decltype(auto) operator/(FixedPoint<traits_a, bits_a, power_a> && lhs, FixedPoint<traits_b, bits_b, power_b> && rhs);
+
 };
 
 template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
 decltype(auto) operator*(FixedPoint<traits_a, bits_a, power_a> const & lhs, FixedPoint<traits_b, bits_b, power_b> const & rhs)
 {
-    return FixedPoint<traits_a | traits_b, bits_a + bits_b, power_a + power_b>(
-        static_cast<decltype(FastestIntegralType<traits_a | traits_b, bits_a + bits_b>())>(lhs.data) * rhs.data);
+  return FixedPoint<traits_a | traits_b, bits_a + bits_b, power_a + power_b>(
+    static_cast<decltype(FastestIntegralType<traits_a | traits_b, bits_a + bits_b>())>(lhs.data) * rhs.data);
 }
 
 template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
 decltype(auto) operator*(FixedPoint<traits_a, bits_a, power_a> && lhs, FixedPoint<traits_b, bits_b, power_b> && rhs)
 {
-    return FixedPoint<traits_a | traits_b, bits_a + bits_b, power_a + power_b>(
-        static_cast<decltype(FastestIntegralType<traits_a | traits_b, bits_a + bits_b>())>(lhs.data) * rhs.data);
+  return FixedPoint<traits_a | traits_b, bits_a + bits_b, power_a + power_b>(
+    static_cast<decltype(FastestIntegralType<traits_a | traits_b, bits_a + bits_b>())>(lhs.data) * rhs.data);
+}
+
+template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
+decltype(auto) operator/(FixedPoint<traits_a, bits_a, power_a> const & lhs, FixedPoint<traits_b, bits_b, power_b> const & rhs)
+{
+  return FixedPoint<traits_a | traits_b, bits_a, power_a - power_b - bits_b>(
+    (static_cast<decltype(FastestIntegralType<traits_a | traits_b, bits_a + bits_b>())>(lhs.data) << bits_b) / rhs.data);
+}
+
+template <NumericTraits traits_a, unsigned bits_a, int power_a, NumericTraits traits_b, unsigned bits_b, int power_b>
+decltype(auto) operator/(FixedPoint<traits_a, bits_a, power_a> && lhs, FixedPoint<traits_b, bits_b, power_b> && rhs)
+{
+  return FixedPoint<traits_a | traits_b, bits_a, power_a - power_b - bits_b>(
+    (static_cast<decltype(FastestIntegralType<traits_a | traits_b, bits_a + bits_b>())>(lhs.data) << bits_b) / rhs.data);
 }
 
 }; // namespace machine
