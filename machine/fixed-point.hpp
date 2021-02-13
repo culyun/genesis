@@ -119,13 +119,13 @@ public:
   // Implicit QNumberType Conversion
   operator QNumberType() const { return getQNumber(); }
 
-  static constexpr int NumberIntegralBits() const { return bits + power; }
+  static constexpr int NumberIntegralBits() { return bits + power; }
 
-  static constexpr int HasIntegralPart() const { NumberIntegralBits() > 0; }
+  static constexpr int HasIntegralPart() { return NumberIntegralBits() > 0; }
 
   auto getIntegralPart() const {
     if constexpr (NumberIntegralBits() > 0) {
-      using ResultType = decltype(SmallestIntegralType<traits, NumberIntegralBits());
+      using ResultType = decltype(SmallestIntegralType<traits, NumberIntegralBits()>());
 
       ResultType result;
 
@@ -143,13 +143,13 @@ public:
     }
   }
 
-  static constexpr int NumberFractionalBits() const { return bits - (bits + power); }
+  static constexpr int NumberFractionalBits() { return bits - (bits + power); }
 
-  static constexpr int HasFractionalPart() const { NumberFractionalBits() > 0; }
+  static constexpr int HasFractionalPart() { return NumberFractionalBits() > 0; }
 
   auto getFractionalPart() const {
     if constexpr (NumberFractionalBits() > 0) {
-      using ResultType = decltype(SmallestIntegralType<traits, NumberFractionalBits());
+      using ResultType = decltype(SmallestIntegralType<traits, NumberFractionalBits()>());
 
       ResultType result = ((1 << NumberFractionalBits()) - 1) & data;
 
