@@ -163,8 +163,8 @@ public:
     }
   }
 
-  FixedPoint<traits, bits, power>() = default;
-  FixedPoint<traits, bits, power>(IntegralType const & data) : data(data) {}
+  FixedPoint() = default;
+  FixedPoint(IntegralType const & data) : data(data) {}
 
   template <NumericTraits traits_a, int bits_a, int power_a, NumericTraits traits_b, int bits_b, int power_b>
   friend decltype(auto) operator*(FixedPoint<traits_a, bits_a, power_a> const & lhs, FixedPoint<traits_b, bits_b, power_b> const & rhs);

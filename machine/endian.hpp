@@ -46,11 +46,11 @@ public:
   //
   // Default copy and move constructors and assignment operators
 
-  OtherEndian<IntegralType>(OtherEndian<IntegralType> & other) = default;
-  OtherEndian<IntegralType> & operator=(OtherEndian<IntegralType> const & rhs) = default;
+  OtherEndian(OtherEndian const & other) = default;
+  OtherEndian & operator=(OtherEndian const & rhs) = default;
 
-  OtherEndian<IntegralType>(OtherEndian<IntegralType> && other) = default;
-  OtherEndian<IntegralType> & operator=(OtherEndian<IntegralType> && rhs) = default;
+  OtherEndian(OtherEndian && other) = default;
+  OtherEndian & operator=(OtherEndian && rhs) = default;
 
   //////////////////////////////
   //
@@ -58,19 +58,19 @@ public:
 
   // Copy from IntegralType constructor
 
-  OtherEndian<IntegralType>(IntegralType const & native) : oeValue(ReverseBytes(native)) {}
+  OtherEndian(IntegralType const & native) : oeValue(ReverseBytes(native)) {}
 
   // Implicit IntegralType Conversion
   operator IntegralType() const { return ReverseBytes(oeValue); }
 
   // Unary Plus
-  OtherEndian<IntegralType> operator+() const { return +ReverseBytes(oeValue); }
+  OtherEndian operator+() const { return +ReverseBytes(oeValue); }
 
   // Unary Minus
-  OtherEndian<IntegralType> operator-() const { return -ReverseBytes(oeValue); }
+  OtherEndian operator-() const { return -ReverseBytes(oeValue); }
 
   // Prefix Increment
-  OtherEndian<IntegralType>& operator++() {
+  OtherEndian& operator++() {
     IntegralType temp = ReverseBytes(oeValue);
     temp++;
     oeValue = ReverseBytes(temp);
@@ -78,14 +78,14 @@ public:
   }
 
   // Postfix Increment
-  OtherEndian<IntegralType> operator++(int) {
-    OtherEndian<IntegralType> old = *this; // copy old value
+  OtherEndian operator++(int) {
+    OtherEndian old = *this; // copy old value
     operator++();  // prefix increment
     return old;    // return old value
   }
 
   // Prefix Decrement
-  OtherEndian<IntegralType>& operator--() {
+  OtherEndian& operator--() {
     IntegralType temp = ReverseBytes(oeValue);
     temp--;
     oeValue = ReverseBytes(temp);
@@ -93,63 +93,63 @@ public:
   }
 
   // Postfix Decrement
-  OtherEndian<IntegralType> operator--(int) {
-    OtherEndian<IntegralType> old = *this; // copy old value
+  OtherEndian operator--(int) {
+    OtherEndian old = *this; // copy old value
     operator--();  // prefix decrement
     return old;    // return old value
   }
 
   // Bitwise NOT
-  OtherEndian<IntegralType> operator~() const {
+  OtherEndian operator~() const {
     return ~oeValue;
   }
 
   // Bitwise AND
-  OtherEndian<IntegralType> operator&(OtherEndian<IntegralType> const & rhs) const {
+  OtherEndian operator&(OtherEndian const & rhs) const {
     return oeValue & rhs.oeValue;
   }
 
   // Bitwise OR
-  OtherEndian<IntegralType> operator|(OtherEndian<IntegralType> const & rhs) const {
+  OtherEndian operator|(OtherEndian const & rhs) const {
     return oeValue | rhs.oeValue;
   }
 
   // Bitwise XOR
-  OtherEndian<IntegralType> operator^(OtherEndian<IntegralType> const & rhs) const {
+  OtherEndian operator^(OtherEndian const & rhs) const {
     return oeValue ^ rhs.oeValue;
   }
 
   // Left Bit-Shift
-  OtherEndian<IntegralType> operator<<(unsigned const & numShifts) const {
+  OtherEndian operator<<(unsigned const & numShifts) const {
     if (numShifts >= static_cast<int>(sizeof(IntegralType) * CHAR_BIT)) return 0;
 
     return ReverseBytes(oeValue) << numShifts;
   }
 
-  OtherEndian<IntegralType> operator<<(int const & numShifts) const {
+  OtherEndian operator<<(int const & numShifts) const {
     if (numShifts < 1) return *this;
 
     return operator<<(static_cast<unsigned>(numShifts));
   }
 
-  OtherEndian<IntegralType> operator<<(OtherEndian<IntegralType> const & numShifts) const {
+  OtherEndian operator<<(OtherEndian const & numShifts) const {
     return operator<<(static_cast<int const>(numShifts));
   }
 
   // Right Bit-Shift
-  OtherEndian<IntegralType> operator>>(unsigned const & numShifts) const {
+  OtherEndian operator>>(unsigned const & numShifts) const {
     if (numShifts >= static_cast<int>(sizeof(IntegralType) * CHAR_BIT)) return 0;
 
     return ReverseBytes(oeValue) >> numShifts;
   }
 
-  OtherEndian<IntegralType> operator>>(int const & numShifts) const {
+  OtherEndian operator>>(int const & numShifts) const {
     if (numShifts < 1) return *this;
 
     return operator>>(static_cast<unsigned>(numShifts));
   }
 
-  OtherEndian<IntegralType> operator>>(OtherEndian<IntegralType> const & numShifts) const {
+  OtherEndian operator>>(OtherEndian const & numShifts) const {
     return operator>>(static_cast<int const>(numShifts));
   }
 };
