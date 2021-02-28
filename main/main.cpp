@@ -46,5 +46,11 @@ int main()
 
   std::cout << "sum is " << sum << std::endl;
 
+ constexpr FixedPrecisionTraits traits = {.bits = 10 };
+ //FixedPrecision<{.bits = 10, .minBits = 5, .maxBits = 21}> number;
+ FixedPrecision<traits> number;
+
+ std::cout << "number.Traits.bits " << number.Traits.bits << std::endl;
+
   return 0;
 }
