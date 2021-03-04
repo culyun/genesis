@@ -48,9 +48,16 @@ int main()
 
  constexpr FixedPrecisionTraits traits = {.bits = 10 };
  //FixedPrecision<{.bits = 10, .minBits = 5, .maxBits = 21}> number;
- FixedPrecision<traits> number;
+ FixedPrecision<traits> number(3);
+ FixedPrecision<traits> number_b(5);
 
- std::cout << "number.Traits.bits " << number.Traits.bits << std::endl;
+ auto product = FixedPrecision<traits>(3) * FixedPrecision<traits>(5);
+ auto quotient = FixedPrecision<traits>(10) * FixedPrecision<traits>(5);
+
+ std::cout << "number.Traits.bits " << number.Traits.bits
+           << ", product.Traits.bits " << product.Traits.bits
+           << ", quotient.Traits.bits " << quotient.Traits.bits
+           << std::endl;
 
   return 0;
 }

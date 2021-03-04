@@ -179,43 +179,30 @@ public:
   FixedPrecision() = default;
   FixedPrecision(IntegralType const & data) : data(data) {}
 
-  template <FixedPrecisionTraits traits_a, FixedPrecisionTraits traits_b>
-  friend decltype(auto) operator*(FixedPrecision<traits_a> const & lhs, FixedPrecision<traits_b> const & rhs);
+  template <FixedPrecisionTraits multiplicandTraits, FixedPrecisionTraits multiplierTraits>
+  friend decltype(auto) operator*(FixedPrecision<multiplicandTraits> multiplicand, FixedPrecision<multiplierTraits> multiplier);
 
-  template <FixedPrecisionTraits traits_a, FixedPrecisionTraits traits_b>
-  friend decltype(auto) operator*(FixedPrecision<traits_a> && lhs, FixedPrecision<traits_b> && rhs);
-
-  template <FixedPrecisionTraits traits_a, FixedPrecisionTraits traits_b>
-  friend decltype(auto) operator/(FixedPrecision<traits_a> const & lhs, FixedPrecision<traits_b> const & rhs);
-
-  template <FixedPrecisionTraits traits_a, FixedPrecisionTraits traits_b>
-  friend decltype(auto) operator/(FixedPrecision<traits_a> && lhs, FixedPrecision<traits_b> && rhs);
+  template <FixedPrecisionTraits dividendTraits, FixedPrecisionTraits divisorTraits>
+  friend decltype(auto) operator/(FixedPrecision<dividendTraits> dividend, FixedPrecision<divisorTraits> rhs);
 };
 
-template <FixedPrecisionTraits traits_a, FixedPrecisionTraits traits_b>
-decltype(auto) operator*(FixedPrecision<traits_a> const & lhs, FixedPrecision<traits_b> const & rhs)
+template <FixedPrecisionTraits multiplicandTraits, FixedPrecisionTraits multiplierTraits>
+decltype(auto) operator*(FixedPrecision<multiplicandTraits> muliplicand, FixedPrecision<multiplierTraits> multiplier)
 {
-  constexpr FixedPrecisionTraits const traits = {
-    .isSigned = traits_a.isSigned || traits_b.isSigned,
-    .bits = traits_a.bits + traits_b.bits,
-    .power = traits_a.power + traits_b.power,
-    .minBits = std::max(traits_a.minBits, traits_b.minBits),
-    .maxBits = std::min(traits_a.maxBits, traits_b.maxBits)};
+  constexpr auto minBits = multiplicandTraits.minBits + multiplierTraits.minBits;
+  constexpr auto maxBits = std::min(multiplicandTraits.maxBits, multiplierTraits.maxBits);
+  //constexpr auto minProductBits = std::max(multiplicandTraits.bits, multiplierTraits.bits);
+  constexpr auto maxProductBits = multiplicandTraits.bits + multiplierTraits.bits;
+  constexpr auto productPower = multiplicandTraits.power + multiplierTraits.power;
 
-  return FixedPrecision<traits>(static_cast<decltype(FastestIntegralType<traits>())>(lhs.data) * rhs.data);
-}
+  constexpr FixedPrecisionTraits productTraits = {
+    .isSigned = multiplicandTraits.isSigned || multiplierTraits.isSigned,
+    .bits = maxProductBits < maxBits ? maxProductBits : maxBits,
+    .power = maxProductBits < maxBits ? productPower : productPower + maxProductBits - maxBits,
+    .minBits = minBits,
+    .maxBits = maxBits};
 
-template <FixedPrecisionTraits traits_a, FixedPrecisionTraits traits_b>
-decltype(auto) operator*(FixedPrecision<traits_a> && lhs, FixedPrecision<traits_b> && rhs)
-{
-  constexpr FixedPrecisionTraits const traits = {
-    .isSigned = traits_a.isSigned || traits_b.isSigned,
-    .bits = traits_a.bits + traits_b.bits,
-    .power = traits_a.power + traits_b.power,
-    .minBits = std::max(traits_a.minBits, traits_b.minBits),
-    .maxBits = std::min(traits_a.maxBits, traits_b.maxBits)};
-
-  return FixedPrecision<traits>(static_cast<decltype(FastestIntegralType<traits>())>(lhs.data) * rhs.data);
+  return FixedPrecision<productTraits>(static_cast<decltype(FastestIntegralType<productTraits>())>(muliplicand.data) * multiplier.data);
 }
 
 // NB. The division operators are wrong
@@ -232,30 +219,52 @@ decltype(auto) operator*(FixedPrecision<traits_a> && lhs, FixedPrecision<traits_
 //     Knowing that at least one bit is needed in the quotient.
 //   I need to figure out how to use / calculate the isSigned, bits, minBits, and maxBits traits in this process.
 
-template <FixedPrecisionTraits traits_a, FixedPrecisionTraits traits_b>
-decltype(auto) operator/(FixedPrecision<traits_a> const & lhs, FixedPrecision<traits_b> const & rhs)
+template <FixedPrecisionTraits dividendTraits, FixedPrecisionTraits divisorTraits>
+decltype(auto) operator/(FixedPrecision<dividendTraits> dividend, FixedPrecision<divisorTraits> divisor)
 {
-  constexpr FixedPrecisionTraits const traits = {
-    .isSigned = traits_a.isSigned || traits_b.isSigned,
-    .bits = traits_a.bits + traits_b.bits,
-    .power = traits_a.power + traits_b.power,
-    .minBits = std::max(traits_a.minBits, traits_b.minBits),
-    .maxBits = std::min(traits_a.maxBits, traits_b.maxBits)};
+  constexpr auto minBits = dividendTraits.minBits - divisorTraits.minBits;
+  constexpr auto maxBits = std::min(dividendTraits.maxBits, divisorTraits.maxBits);
+  constexpr auto minQuotientBits = dividendTraits.bits - divisorTraits.bits;
+  constexpr auto maxQuotientBits = dividendTraits.bits;
+  constexpr auto quotientPower = dividendTraits.power - divisorTraits.power;
 
-  return FixedPrecision<traits>(static_cast<decltype(FastestIntegralType<traits>())>(lhs.data) / rhs.data);
-}
+  // Since integral division is continuous for all divisors != 0,
+  // spread the result across as many bits as possible and adjust the power of the quotient accordingly
 
-template <FixedPrecisionTraits traits_a, FixedPrecisionTraits traits_b>
-decltype(auto) operator/(FixedPrecision<traits_a> && lhs, FixedPrecision<traits_b> && rhs)
-{
-  constexpr FixedPrecisionTraits const traits = {
-    .isSigned = traits_a.isSigned || traits_b.isSigned,
-    .bits = traits_a.bits + traits_b.bits,
-    .power = traits_a.power + traits_b.power,
-    .minBits = std::max(traits_a.minBits, traits_b.minBits),
-    .maxBits = std::min(traits_a.maxBits, traits_b.maxBits)};
+  constexpr FixedPrecisionTraits quotientTraits = {
+    .isSigned = dividendTraits.isSigned || divisorTraits.isSigned,
+    .bits = maxBits,
+    .power = quotientPower + dividendTraits.bits - maxBits,
+    .minBits = minBits,
+    .maxBits = maxBits};
 
-  return FixedPrecision<traits>(static_cast<decltype(FastestIntegralType<traits>())>(lhs.data) / rhs.data);
+  // NB. The order and kind of operations performed during the actual division are critical,
+  //     and depend on whether the quotient requires an integral promotion or demotion.
+  //
+  //     For situations requiring no change or promotion of the quotient's underlying integral,
+  //     a static type cast to that integral must be performed prior to any left-shifts on the dividend.
+  //
+  //     This includes the cases of no underlying promotion or a shift of zero.
+  //
+  //     For situations requiring a demotion of the quotient's underlying integral,
+  //     right-shifts must be performed prior to static type casts of the dividend and the divisor.
+  //
+
+  if constexpr (dividendTraits.bits <= maxBits) {
+    return FixedPrecision<quotientTraits>(
+        (                                                                                 // Adjust dividend
+           static_cast<decltype(FastestIntegralType<quotientTraits>())>(dividend.data)    //  (1) Promote if needed
+           << (maxBits - dividendTraits.bits)                                             //  (2) Fill underlying integral type
+        )
+        / divisor.data);                                                                  // Perform division
+  } else {
+    return FixedPrecision<quotientTraits>(
+        (                                                                                 // Adjust dividend
+           static_cast<decltype(FastestIntegralType<quotientTraits>())>                   //  (2) Demote
+           (dividend.data >> (maxBits - dividendTraits.bits))                             //  (1) Discard overflow bits
+        )
+        / static_cast<decltype(FastestIntegralType<quotientTraits>())>(divisor.data));    // Demote divisor if needed then perform division
+  }
 }
 
 //template <FixedPrecisionTraits traits_a, int bits_a, int power_a, FixedPrecisionTraits traits_b, int bits_b, int power_b>
