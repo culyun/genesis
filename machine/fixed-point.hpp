@@ -1,11 +1,76 @@
 #pragma once
 
+#include <iostream>
+
 #include <cstdint>
+#include <cstdlib>
 #include <limits>
 #include <type_traits>
 #include <algorithm>
 
 #include <cassert>
+
+#include "ieee754_types.hpp"
+
+#include "ieee754.h"
+
+namespace IEEE_754 { namespace _2008 {
+
+template <int width>
+constexpr auto Layout()
+{
+  if constexpr(width == 32 && std::endian::native == std::endian::big) {
+    struct
+    {
+      unsigned negative:1;
+      unsigned exponent:8;
+      unsigned mantissa:23;
+    } layout;
+    return layout;
+  }
+
+  if constexpr(width == 32 && std::endian::native == std::endian::little) {
+    struct
+    {
+      unsigned mantissa:23;
+      unsigned exponent:8;
+      unsigned negative:1;
+    } layout;
+    return layout;
+  }
+
+  if constexpr(width == 64 && std::endian::native == std::endian::big) {
+    struct
+    {
+      unsigned negative:1;
+      unsigned exponent:11;
+      uint64_t mantissa:52;
+    } layout;
+    return layout;
+  }
+
+  if constexpr(width == 64 && std::endian::native == std::endian::little) {
+    struct
+    {
+      uint64_t mantissa:52;
+      unsigned exponent:11;
+      unsigned negative:1;
+    } layout;
+    return layout;
+  }
+}
+
+template <int width>
+union Encoding
+{
+  using Float = IEEE_754::_2008::Binary<width>;
+  Float value;
+
+  using Layout = decltype(IEEE_754::_2008::Layout<width>());
+  Layout raw;
+};
+
+} } // namespace IEEE_754::_2008
 
 namespace machine {
 
@@ -19,7 +84,7 @@ struct FixedPrecisionTraits
   int bits = 0;
   int power = 0;
   int minBits = bits;
-  int maxBits = 64;
+  int maxBits = 63;
 };
 
 template <typename StorageType = uint32_t>
@@ -165,6 +230,27 @@ constexpr auto SmallestIntegralType()
   static_assert((traits & SIGNED) == SIGNED || bits <= 64, "\n\n\33[1;31mError: No UNSIGNED integral types can store more than 64 data bits!\33[0m\n\n");
 }
 
+template<typename IntegralType>
+requires std::is_unsigned_v<IntegralType>
+int CountLeadingZeroes(IntegralType const number)
+{
+  if (number == 0) return CHAR_BIT * sizeof(IntegralType);
+
+  if constexpr(sizeof(IntegralType) <= sizeof(unsigned)) {
+    return __builtin_clz(number) - CHAR_BIT * (sizeof(unsigned) - sizeof(IntegralType));
+  }
+
+  if constexpr(sizeof(IntegralType) > sizeof(unsigned) && sizeof(IntegralType) <= sizeof(unsigned long)) {
+    return __builtin_clzl(number) - CHAR_BIT * (sizeof(unsigned long) - sizeof(IntegralType));
+  }
+
+  if constexpr(sizeof(IntegralType) > sizeof(unsigned long) && sizeof(IntegralType) <= sizeof(unsigned long long)) {
+    return __builtin_clzll(number) - CHAR_BIT * (sizeof(unsigned long long) - sizeof(IntegralType));
+  }
+
+  static_assert(sizeof(IntegralType) <= sizeof(unsigned long long), "\n\n\33[1;31mError: No clz builtin for supplied arguement!\33[0m\n\n");
+}
+
 template<FixedPrecisionTraits traits>
 requires FixedPrecisionTraitsValidator<traits>
 struct FixedPrecision
@@ -179,6 +265,108 @@ public:
   FixedPrecision() = default;
   FixedPrecision(IntegralType const & data) : data(data) {}
 
+  using Float32 = IEEE_754::_2008::Binary<32>;
+
+  operator Float32() const
+  {
+    // 1. Return zero for the trivial case
+
+    if (data == 0) {
+      return 0.0;
+    }
+
+    IEEE_754::_2008::Encoding<32> result;
+
+    constexpr int MantissaBits = 23;
+    constexpr int ExponentialMax = 127;
+    constexpr int ExponentialBias = 127;
+    constexpr int ExponentialMin = -127;
+
+    // 2. Check the theoretical data bits,
+    //    Return +inf, -inf, or zero if impossible to represent in the return type
+
+    constexpr auto MSB = traits.bits + traits.power;
+    constexpr auto LSB = 1 + traits.power;
+
+    bool const isNegative = traits.isSigned && data < 0;
+
+    if constexpr(MSB > ExponentialMax) {
+      if (isNegative) {
+        return -std::numeric_limits<Float32>::infinity();
+      } else {
+        return std::numeric_limits<Float32>::infinity();
+      }
+    }
+
+    if constexpr(LSB < ExponentialMin) {
+      return  0.0;
+    }
+
+    // 3. Check the actual data bits,
+    //    Return +inf, -inf if impossible to represent in the return type
+
+    typename std::make_unsigned<IntegralType>::type digits;
+
+    if constexpr(traits.isSigned) {
+      digits = std::abs(data);
+    } else {
+      digits = data;
+    }
+
+    std::cout << "Here" << std::endl;
+
+    auto const leadingZeroes = CountLeadingZeroes(digits);
+    auto const actualDataBits = (CHAR_BIT * sizeof(IntegralType)) - leadingZeroes;
+    auto const msb = actualDataBits + traits.power;
+
+    if (msb > ExponentialMax) {
+      if (isNegative) {
+        return -std::numeric_limits<Float32>::infinity();
+      } else {
+        return std::numeric_limits<Float32>::infinity();
+      }
+    }
+    std::cout << "Here2" << std::endl;
+
+    // 4. Manually initialize the return type
+
+    result.value = 0;
+
+    result.raw.negative = isNegative ? 1 : 0;
+    result.raw.mantissa = digits << (MantissaBits - actualDataBits + 1);
+
+    std::cout << "digits " << digits << std::endl;
+    std::cout << "traits.power " << traits.power << std::endl;
+    std::cout << "actualDataBits " << actualDataBits << std::endl;
+    std::cout << "leadingZeroes  " << leadingZeroes << std::endl;
+
+    result.raw.exponent = ExponentialBias + msb - 1;
+
+    std::cout << "result.raw.negative " << result.raw.negative << std::endl;
+    std::cout << std::hex;
+    std::cout << "result.raw.mantissa 0x" << result.raw.mantissa << std::endl;
+    std::cout << "result.raw.exponent 0x" << result.raw.exponent << std::endl;
+    std::cout << std::dec;
+    
+  std::cout << "result.value = " << std::setprecision(15) << result.value << std::endl;
+
+   if (traits.power >= 0) {
+     result.value = (float) data * (1 << traits.power);
+   } else {
+     result.value = (float) data / (1 << std::abs(traits.power));
+   }
+
+   std::cout << "result.raw.negative " << result.raw.negative << std::endl;
+   std::cout << std::hex;
+   std::cout << "result.raw.mantissa 0x" << result.raw.mantissa << std::endl;
+   std::cout << "result.raw.exponent 0x" << result.raw.exponent << std::endl;
+   std::cout << std::dec;
+ 
+  std::cout << "result.value = " << std::setprecision(15) << result.value << std::endl;
+ 
+    return result.value;
+  }
+
   template <FixedPrecisionTraits multiplicandTraits, FixedPrecisionTraits multiplierTraits>
   friend decltype(auto) operator*(FixedPrecision<multiplicandTraits> multiplicand, FixedPrecision<multiplierTraits> multiplier);
 
@@ -189,8 +377,8 @@ public:
 template <FixedPrecisionTraits multiplicandTraits, FixedPrecisionTraits multiplierTraits>
 decltype(auto) operator*(FixedPrecision<multiplicandTraits> muliplicand, FixedPrecision<multiplierTraits> multiplier)
 {
-  constexpr auto minBits = multiplicandTraits.minBits + multiplierTraits.minBits;
   constexpr auto maxBits = std::min(multiplicandTraits.maxBits, multiplierTraits.maxBits);
+  constexpr auto minBits = std::min(maxBits, multiplicandTraits.minBits + multiplierTraits.minBits);
   //constexpr auto minProductBits = std::max(multiplicandTraits.bits, multiplierTraits.bits);
   constexpr auto maxProductBits = multiplicandTraits.bits + multiplierTraits.bits;
   constexpr auto productPower = multiplicandTraits.power + multiplierTraits.power;
@@ -222,10 +410,10 @@ decltype(auto) operator*(FixedPrecision<multiplicandTraits> muliplicand, FixedPr
 template <FixedPrecisionTraits dividendTraits, FixedPrecisionTraits divisorTraits>
 decltype(auto) operator/(FixedPrecision<dividendTraits> dividend, FixedPrecision<divisorTraits> divisor)
 {
-  constexpr auto minBits = dividendTraits.minBits - divisorTraits.minBits;
   constexpr auto maxBits = std::min(dividendTraits.maxBits, divisorTraits.maxBits);
-  constexpr auto minQuotientBits = dividendTraits.bits - divisorTraits.bits;
-  constexpr auto maxQuotientBits = dividendTraits.bits;
+  constexpr auto minBits = std::min(maxBits, dividendTraits.minBits + divisorTraits.minBits);
+  //constexpr auto minQuotientBits = dividendTraits.bits - divisorTraits.bits;
+  //constexpr auto maxQuotientBits = dividendTraits.bits;
   constexpr auto quotientPower = dividendTraits.power - divisorTraits.power;
 
   // Since integral division is continuous for all divisors != 0,
@@ -260,7 +448,7 @@ decltype(auto) operator/(FixedPrecision<dividendTraits> dividend, FixedPrecision
   } else {
     return FixedPrecision<quotientTraits>(
         (                                                                                 // Adjust dividend
-           static_cast<decltype(FastestIntegralType<quotientTraits>())>                   //  (2) Demote
+           static_cast<decltype(FastestIntegralType<quotientTraits>())>                   //  (2) Demote if needed
            (dividend.data >> (maxBits - dividendTraits.bits))                             //  (1) Discard overflow bits
         )
         / static_cast<decltype(FastestIntegralType<quotientTraits>())>(divisor.data));    // Demote divisor if needed then perform division
