@@ -84,6 +84,10 @@ int main()
   float val = FixedPrecision<FixedPrecisionTraits{.isSigned = true, .bits = 32, .power=-1 }>(-12345679);
 
   std::cout << "Float val = " << std::setprecision(15) <<  val << std::endl;
+  
+  IEEE_754::_2008::Binary<32> joe = 42.7;
+  std::cout << "joe val = " << std::setprecision(15) <<  joe << std::endl;
 
+  FixedPrecision<MakeFixedPrecisionTraits<-42.3f, 137.3f>()> nancy(1);
   return 0;
 }

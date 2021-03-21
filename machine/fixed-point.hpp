@@ -7,6 +7,8 @@
 #include <limits>
 #include <type_traits>
 #include <algorithm>
+#include <variant>
+#include <bit>
 
 #include <cassert>
 
@@ -66,9 +68,16 @@ union Encoding
   using Float = IEEE_754::_2008::Binary<width>;
   Float value;
 
+  Encoding<width> & operator=(Float const & value) { this->value = value; }
+
+  operator Float() const { return value; }
+
   using Layout = decltype(IEEE_754::_2008::Layout<width>());
   Layout raw;
 };
+
+
+
 
 } } // namespace IEEE_754::_2008
 
@@ -87,10 +96,24 @@ struct FixedPrecisionTraits
   int maxBits = 63;
 };
 
-template <typename StorageType = uint32_t>
-struct SillyTraits
+template<IEEE_754::_2008::Binary<32> minValue = 0.0f, IEEE_754::_2008::Binary<32> maxValue = 0.0f>
+constexpr FixedPrecisionTraits MakeFixedPrecisionTraits()
 {
-  StorageType storage = 0;
+  constexpr auto layoutMin = std::bit_cast<decltype(IEEE_754::_2008::Layout<32>())>(minValue);
+  constexpr auto layoutMax = std::bit_cast<decltype(IEEE_754::_2008::Layout<32>())>(maxValue);
+
+  return {.isSigned = (layoutMin.negative | layoutMax.negative) != 0};
+}
+
+struct DynamicRange
+{
+  double min;
+  double max;
+  double digits;
+
+  constexpr operator FixedPrecisionTraits() {
+    return {};
+  }
 };
 
 template<FixedPrecisionTraits traits>
@@ -275,7 +298,6 @@ public:
       return 0.0;
     }
 
-    IEEE_754::_2008::Encoding<32> result;
 
     constexpr int MantissaBits = 23;
     constexpr int ExponentialMax = 127;
@@ -330,42 +352,51 @@ public:
 
     // 4. Manually initialize the return type
 
-    result.value = 0;
+    decltype(IEEE_754::_2008::Layout<32>()) raw;
 
-    result.raw.negative = isNegative ? 1 : 0;
-    result.raw.mantissa = digits << (MantissaBits - actualDataBits + 1);
+    raw.negative = isNegative ? 1 : 0;
+    raw.mantissa = digits << (MantissaBits - actualDataBits + 1);
 
     std::cout << "digits " << digits << std::endl;
     std::cout << "traits.power " << traits.power << std::endl;
     std::cout << "actualDataBits " << actualDataBits << std::endl;
     std::cout << "leadingZeroes  " << leadingZeroes << std::endl;
 
-    result.raw.exponent = ExponentialBias + msb - 1;
+    raw.exponent = ExponentialBias + msb - 1;
 
-    std::cout << "result.raw.negative " << result.raw.negative << std::endl;
+    std::cout << "raw.negative " << raw.negative << std::endl;
     std::cout << std::hex;
-    std::cout << "result.raw.mantissa 0x" << result.raw.mantissa << std::endl;
-    std::cout << "result.raw.exponent 0x" << result.raw.exponent << std::endl;
+    std::cout << "raw.mantissa 0x" << raw.mantissa << std::endl;
+    std::cout << "raw.exponent 0x" << raw.exponent << std::endl;
     std::cout << std::dec;
+
+    Float32 value = std::bit_cast<Float32>(raw);
     
-  std::cout << "result.value = " << std::setprecision(15) << result.value << std::endl;
+  std::cout << "value = " << std::setprecision(15) << value << std::endl;
 
    if (traits.power >= 0) {
-     result.value = (float) data * (1 << traits.power);
+     value = (float) data * (1 << traits.power);
    } else {
-     result.value = (float) data / (1 << std::abs(traits.power));
+     value = (float) data / (1 << std::abs(traits.power));
    }
 
-   std::cout << "result.raw.negative " << result.raw.negative << std::endl;
+   raw = std::bit_cast<decltype(raw)>(value);
+
+   std::cout << "raw.negative " << raw.negative << std::endl;
    std::cout << std::hex;
-   std::cout << "result.raw.mantissa 0x" << result.raw.mantissa << std::endl;
-   std::cout << "result.raw.exponent 0x" << result.raw.exponent << std::endl;
+   std::cout << "raw.mantissa 0x" << raw.mantissa << std::endl;
+   std::cout << "raw.exponent 0x" << raw.exponent << std::endl;
    std::cout << std::dec;
+
+   value = std::bit_cast<Float32>(raw);
+   
+
+  std::cout << "value = " << std::setprecision(15) << value << std::endl;
  
-  std::cout << "result.value = " << std::setprecision(15) << result.value << std::endl;
- 
-    return result.value;
+    return value;
   }
+
+
 
   template <FixedPrecisionTraits multiplicandTraits, FixedPrecisionTraits multiplierTraits>
   friend decltype(auto) operator*(FixedPrecision<multiplicandTraits> multiplicand, FixedPrecision<multiplierTraits> multiplier);
@@ -373,6 +404,9 @@ public:
   template <FixedPrecisionTraits dividendTraits, FixedPrecisionTraits divisorTraits>
   friend decltype(auto) operator/(FixedPrecision<dividendTraits> dividend, FixedPrecision<divisorTraits> rhs);
 };
+
+//template <
+//constexpr FixedPrecisionTraits makeTraits<
 
 template <FixedPrecisionTraits multiplicandTraits, FixedPrecisionTraits multiplierTraits>
 decltype(auto) operator*(FixedPrecision<multiplicandTraits> muliplicand, FixedPrecision<multiplierTraits> multiplier)
