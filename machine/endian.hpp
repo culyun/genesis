@@ -4,16 +4,18 @@
 #include <climits>
 #include <cstdint>
 #include <type_traits>
+#include <concepts>
+#include <utility>
 
 namespace culyun { namespace endian {
 
-template<typename IntegralType>
+template<typename StorageType>
 concept EndianIntegral =
-    std::is_integral_v<IntegralType> && (sizeof(IntegralType) == 2 || sizeof(IntegralType) == 4 || sizeof(IntegralType) == 8);
+    std::is_integral_v<StorageType> && (sizeof(StorageType) == 2 || sizeof(StorageType) == 4 || sizeof(StorageType) == 8);
 
-template<typename IntegralType>
-requires EndianIntegral<IntegralType>
-IntegralType ReverseBytes(IntegralType const & value);
+template<typename StorageType>
+requires EndianIntegral<StorageType>
+StorageType ReverseBytes(StorageType const & value);
 
 template<>
 uint16_t ReverseBytes<uint16_t>(uint16_t const & value) { return __builtin_bswap16(value); }
@@ -33,47 +35,55 @@ uint64_t ReverseBytes<uint64_t>(uint64_t const & value) { return __builtin_bswap
 template<>
 int64_t ReverseBytes<int64_t>(int64_t const & value) { return __builtin_bswap64(value); }
 
-template<typename IntegralType>
-requires EndianIntegral<IntegralType>
+template<typename StorageType>
+requires EndianIntegral<StorageType>
 class OtherEndian
 {
 private:
-  IntegralType oeValue = 0;
+  StorageType value = 0;
 
 public:
 
   //////////////////////////////
   //
-  // Default copy and move constructors and assignment operators
+  // Alternative Constructors for Integrals and OtherEndian types
 
-  OtherEndian(OtherEndian const & other) = default;
-  OtherEndian & operator=(OtherEndian const & rhs) = default;
+  OtherEndian(EndianIntegral auto const native) :
+    value(ReverseBytes(static_cast<StorageType>(native)))
+  {
+  }
 
-  OtherEndian(OtherEndian && other) = default;
-  OtherEndian & operator=(OtherEndian && rhs) = default;
+  OtherEndian & operator=(EndianIntegral auto const rhs) {
+    value = OtherEndian(rhs).value;
+    return *this;
+  }
 
-  //////////////////////////////
-  //
-  // Integral Constructors and Operator Overloads
+  template <typename AltStorageType>
+  OtherEndian(OtherEndian<AltStorageType> const other) :
+    OtherEndian(static_cast<AltStorageType>(other))
+  {
+  }
 
-  // Copy from IntegralType constructor
+  template <typename AltStorageType>
+  OtherEndian & operator=(OtherEndian<AltStorageType> const rhs) {
+    value = OtherEndian(rhs).value;
+    return *this;
+  }
 
-  OtherEndian(IntegralType const & native) : oeValue(ReverseBytes(native)) {}
-
-  // Implicit IntegralType Conversion
-  operator IntegralType() const { return ReverseBytes(oeValue); }
+  // Implicit StorageType Conversion
+  operator StorageType() const { return ReverseBytes(value); }
 
   // Unary Plus
-  OtherEndian operator+() const { return +ReverseBytes(oeValue); }
+  OtherEndian operator+() const { return *this; }
 
   // Unary Minus
-  OtherEndian operator-() const { return -ReverseBytes(oeValue); }
+  OtherEndian operator-() const { return -ReverseBytes(value); }
 
   // Prefix Increment
   OtherEndian& operator++() {
-    IntegralType temp = ReverseBytes(oeValue);
+    StorageType temp = ReverseBytes(value);
     temp++;
-    oeValue = ReverseBytes(temp);
+    value = ReverseBytes(temp);
     return *this; // return new value by reference
   }
 
@@ -86,9 +96,9 @@ public:
 
   // Prefix Decrement
   OtherEndian& operator--() {
-    IntegralType temp = ReverseBytes(oeValue);
+    StorageType temp = ReverseBytes(value);
     temp--;
-    oeValue = ReverseBytes(temp);
+    value = ReverseBytes(temp);
     return *this; // return new value by reference
   }
 
@@ -101,56 +111,48 @@ public:
 
   // Bitwise NOT
   OtherEndian operator~() const {
-    return ~oeValue;
+    OtherEndian result;
+    result.value = ~value;
+    return result;
   }
 
   // Bitwise AND
   OtherEndian operator&(OtherEndian const & rhs) const {
-    return oeValue & rhs.oeValue;
+    return value & rhs.value;
   }
 
   // Bitwise OR
   OtherEndian operator|(OtherEndian const & rhs) const {
-    return oeValue | rhs.oeValue;
+    return value | rhs.value;
   }
 
   // Bitwise XOR
   OtherEndian operator^(OtherEndian const & rhs) const {
-    return oeValue ^ rhs.oeValue;
+    return value ^ rhs.value;
   }
 
   // Left Bit-Shift
-  OtherEndian operator<<(unsigned const & numShifts) const {
-    if (numShifts >= static_cast<int>(sizeof(IntegralType) * CHAR_BIT)) return 0;
 
-    return ReverseBytes(oeValue) << numShifts;
+  OtherEndian operator<<(std::integral auto const & shifts) const {
+    if (std::cmp_less(shifts, 1)) return *this;
+    if (std::cmp_greater_equal(shifts, sizeof(StorageType) * CHAR_BIT)) return 0;
+    return ReverseBytes(value) << shifts;
   }
 
-  OtherEndian operator<<(int const & numShifts) const {
-    if (numShifts < 1) return *this;
-
-    return operator<<(static_cast<unsigned>(numShifts));
-  }
-
-  OtherEndian operator<<(OtherEndian const & numShifts) const {
-    return operator<<(static_cast<int const>(numShifts));
+  OtherEndian operator<<(OtherEndian const & shifts) const {
+    return operator<<(static_cast<int const>(shifts));
   }
 
   // Right Bit-Shift
-  OtherEndian operator>>(unsigned const & numShifts) const {
-    if (numShifts >= static_cast<int>(sizeof(IntegralType) * CHAR_BIT)) return 0;
 
-    return ReverseBytes(oeValue) >> numShifts;
+  OtherEndian operator>>(std::integral auto const & shifts) const {
+    if (std::cmp_less(shifts, 1)) return *this;
+    if (std::cmp_greater_equal(shifts, sizeof(StorageType) * CHAR_BIT)) return 0;
+    return ReverseBytes(value) >> shifts;
   }
 
-  OtherEndian operator>>(int const & numShifts) const {
-    if (numShifts < 1) return *this;
-
-    return operator>>(static_cast<unsigned>(numShifts));
-  }
-
-  OtherEndian operator>>(OtherEndian const & numShifts) const {
-    return operator>>(static_cast<int const>(numShifts));
+  OtherEndian operator>>(OtherEndian const & shifts) const {
+    return operator>>(static_cast<int const>(shifts));
   }
 };
 
