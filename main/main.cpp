@@ -51,7 +51,7 @@ int main()
   decltype(george)::QNumberType herbert = george;
 
   std::cout << "george.bits = " << george.Bits << ", .power " << george.Power << ", .QNumber " << george.getQNumber() << std::endl;
-  std::cout << "herbert " << herbert << ", 0x" << std::hex << herbert << std::endl;
+  std::cout << "herbert wilby " << herbert << ", 0x" << std::hex << herbert << std::endl;
 
   if (std::is_same_v<int32_t, decltype(george.getQNumber())>) {
     std::cout << "george storage is int32_t" << std::endl;
@@ -61,9 +61,22 @@ int main()
 
     uint32le_t fred = 1;
   int32le_t jo = 3;
-  uint32be_t sum = fred << (jo);
+  uint64be_t sum = fred << (jo);
 
   std::cout << "sum is " << sum << std::endl;
+
+  std::cout << std::dec;
+
+  sum = 16;
+  int kelly = -1;
+  uint32be_t sum2 = static_cast<uint16_t>(sum << kelly);
+  std::cout << "sum2!!! = " << sum2 << std::endl;
+  
+  sum2 = sum >> kelly;
+  std::cout << "sum2xxx = " << sum2 << std::endl;
+
+  sum2 = -sum;
+  std::cout << "sum2 = sum + 3 = " << sum2 << std::endl;
 
  //constexpr FixedPrecisionTraits traits = {.bits = 10 };
  constexpr FixedPrecisionTraits traits = {.isSigned = false, .bits = 10, .maxBits = 25 };
