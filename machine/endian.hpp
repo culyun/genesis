@@ -1,8 +1,10 @@
 #pragma once
 
 #include <bit>
+#include <cassert>
 #include <climits>
 #include <cstdint>
+#include <cstring>
 #include <type_traits>
 #include <concepts>
 #include <utility>
@@ -43,9 +45,14 @@ private:
   StorageType value = 0;
 
 public:
+  // Explicit Conversions
 
-  //////////////////////////////
-  //
+  StorageType getNativeValue() const { return ReverseBytes(value); }
+  void setNativeValue(StorageType const native) { value = ReverseBytes(native); }
+
+  StorageType getEncodedValue() const { return value; }
+  void setEncodedValue(StorageType const encodedValue) { value = encodedValue; }
+
   // Alternative Constructors for Integrals and OtherEndian types
 
   OtherEndian(EndianIntegral auto const native) :
@@ -70,20 +77,26 @@ public:
     return *this;
   }
 
-  // Implicit StorageType Conversion
-  operator StorageType() const { return ReverseBytes(value); }
+  // Direct initialization from non null pointer
+  OtherEndian(uint8_t const * const data) {
+    assert(data != nullptr);
+    std::memcpy(&value, data, sizeof(StorageType));
+  }
+
+  // Implicit Conversion
+  operator StorageType() const { return getNativeValue(); }
 
   // Unary Plus
   OtherEndian operator+() const { return *this; }
 
   // Unary Minus
-  OtherEndian operator-() const { return -ReverseBytes(value); }
+  OtherEndian operator-() const { return -getNativeValue(); }
 
   // Prefix Increment
   OtherEndian& operator++() {
-    StorageType temp = ReverseBytes(value);
+    StorageType temp = getNativeValue();
     temp++;
-    value = ReverseBytes(temp);
+    setNativeValue(temp);
     return *this; // return new value by reference
   }
 
@@ -96,9 +109,9 @@ public:
 
   // Prefix Decrement
   OtherEndian& operator--() {
-    StorageType temp = ReverseBytes(value);
+    StorageType temp = getNativeValue();
     temp--;
-    value = ReverseBytes(temp);
+    setNativeValue(temp);
     return *this; // return new value by reference
   }
 
@@ -136,7 +149,7 @@ public:
   OtherEndian operator<<(std::integral auto const & shifts) const {
     if (std::cmp_less(shifts, 1)) return *this;
     if (std::cmp_greater_equal(shifts, sizeof(StorageType) * CHAR_BIT)) return 0;
-    return ReverseBytes(value) << shifts;
+    return getNativeValue() << shifts;
   }
 
   OtherEndian operator<<(OtherEndian const & shifts) const {
@@ -148,13 +161,105 @@ public:
   OtherEndian operator>>(std::integral auto const & shifts) const {
     if (std::cmp_less(shifts, 1)) return *this;
     if (std::cmp_greater_equal(shifts, sizeof(StorageType) * CHAR_BIT)) return 0;
-    return ReverseBytes(value) >> shifts;
+    return getNativeValue() >> shifts;
   }
 
   OtherEndian operator>>(OtherEndian const & shifts) const {
     return operator>>(static_cast<int const>(shifts));
   }
 };
+
+template <typename IntegralType>
+concept OtherEndianType = std::same_as<IntegralType, OtherEndian< int16_t>> ||
+                          std::same_as<IntegralType, OtherEndian<uint16_t>> ||
+                          std::same_as<IntegralType, OtherEndian< int32_t>> ||
+                          std::same_as<IntegralType, OtherEndian<uint32_t>> ||
+                          std::same_as<IntegralType, OtherEndian< int64_t>> ||
+                          std::same_as<IntegralType, OtherEndian<uint64_t>>;
+
+template <typename IntegralType>
+auto GetNativeValue(IntegralType const & value)
+{
+  if constexpr (EndianIntegral<IntegralType>) {
+    return value;
+  }
+
+  if constexpr(OtherEndianType<IntegralType>) {
+    return value.getNativeValue();
+  }
+
+  // Build time errors
+
+  static_assert(EndianIntegral<IntegralType> || OtherEndianType<IntegralType>,
+                "\n\n\33[1;31mError: Supplied argument is not representable as an Endian Integral!\33[0m\n\n");
+}
+
+template <typename IntegralType>
+auto GetEncodedValue(IntegralType const & value)
+{
+  if constexpr (EndianIntegral<IntegralType>) {
+    return ReverseBytes(value);
+  }
+
+  if constexpr(OtherEndianType<IntegralType>) {
+    return value.getEncodedValue();
+  }
+
+  // Build time errors
+
+  static_assert((EndianIntegral<IntegralType> || OtherEndianType<IntegralType>),
+                "\n\n\33[1;31mError: Supplied argument is not representable as an Endian Integral!\33[0m\n\n");
+}
+
+template <typename IntegralType>
+auto GetBigEndianValue(IntegralType const & value)
+{
+  if constexpr (EndianIntegral<IntegralType>) {
+    if constexpr (std::endian::native == std::endian::big) {
+      return value;
+    } else {
+      return ReverseBytes(value);
+    }
+  }
+
+  if constexpr(OtherEndianType<IntegralType>) {
+    if constexpr (std::endian::native == std::endian::big) {
+      return value.getNativeValue();
+    } else {
+      return value.getEncodedValue();
+    }
+  }
+
+  // Build time errors
+
+  static_assert(EndianIntegral<IntegralType> || OtherEndianType<IntegralType>,
+                "\n\n\33[1;31mError: Supplied argument is not representable as a Big-Endian Integral!\33[0m\n\n");
+}
+
+template <typename IntegralType>
+auto GetLittleEndianValue(IntegralType const & value)
+{
+  if constexpr (EndianIntegral<IntegralType>) {
+    if constexpr (std::endian::native == std::endian::little) {
+      return value;
+    } else {
+      return ReverseBytes(value);
+    }
+  }
+
+  if constexpr(OtherEndianType<IntegralType>) {
+    if constexpr (std::endian::native == std::endian::little) {
+      return value.getNativeValue();
+    } else {
+      return value.getEncodedValue();
+    }
+  }
+
+  // Build time errors
+
+  static_assert(EndianIntegral<IntegralType> || OtherEndianType<IntegralType>,
+                "\n\n\33[1;31mError: Supplied argument is not representable as a Little-Endian Integral!\33[0m\n\n");
+}
 
 }} // namespace culyun::endian
 

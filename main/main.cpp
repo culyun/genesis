@@ -10,6 +10,7 @@
 
 #include "../machine/fixed-point.hpp"
 using namespace machine;
+using namespace culyun;
 
 template <FixedPrecisionTraits traits>
 requires FixedPrecisionTraitsValidator<traits>
@@ -31,6 +32,15 @@ void printFixedPrecision(FixedPrecision<traits> const & number, std::string cons
 
 int main()
 {
+  uint32be_t frank = 42;
+
+  uint32_t frankEncoding = endian::GetEncodedValue(frank);
+  uint32_t frankNative = endian::GetNativeValue(frank);
+  uint32_t frankBigEndian = endian::GetBigEndianValue(frank);
+  uint32_t frankLittleEndian = endian::GetLittleEndianValue(frank);
+
+//  uint32_t * fred_data = fred;
+  
   if (std::is_same_v<int32_t, decltype(SmallestIntegralType<SIGNED, 31>())>) {
     std::cout << "int32_t is the smallest signed integral type supporting 31 bits of precision" << std::endl;
   } else if (std::is_same_v<int64_t, decltype(SmallestIntegralType<SIGNED, 31>())>) {
