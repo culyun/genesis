@@ -53,6 +53,8 @@ public:
   StorageType getEncodedValue() const { return value; }
   void setEncodedValue(StorageType const encodedValue) { value = encodedValue; }
 
+  OtherEndian() = default;
+
   // Alternative Constructors for Integrals and OtherEndian types
 
   OtherEndian(EndianIntegral auto const native) :
@@ -265,7 +267,7 @@ auto GetLittleEndianValue(IntegralType const & value)
 
 namespace {
 
-// Typedef be and le equivalents to the fixed-width integral types
+// Typedef be, le, and oe equivalents to the fixed-width integral types
 
 using uint16be_t = std::conditional_t<std::endian::native == std::endian::big, uint16_t, culyun::endian::OtherEndian<uint16_t>>;
 using int16be_t = std::conditional_t<std::endian::native == std::endian::big, int16_t, culyun::endian::OtherEndian<int16_t>>;
@@ -284,5 +286,14 @@ using int32le_t = std::conditional_t<std::endian::native == std::endian::little,
 
 using uint64le_t = std::conditional_t<std::endian::native == std::endian::little, uint64_t, culyun::endian::OtherEndian<uint64_t>>;
 using int64le_t = std::conditional_t<std::endian::native == std::endian::little, int64_t, culyun::endian::OtherEndian<int64_t>>;
+
+using uint16oe_t = culyun::endian::OtherEndian<uint16_t>;
+using int16oe_t = culyun::endian::OtherEndian<int16_t>;
+
+using uint32oe_t = culyun::endian::OtherEndian<uint32_t>;
+using int32oe_t = culyun::endian::OtherEndian<int32_t>;
+
+using uint64oe_t = culyun::endian::OtherEndian<uint64_t>;
+using int64oe_t = culyun::endian::OtherEndian<int64_t>;
 
 }
