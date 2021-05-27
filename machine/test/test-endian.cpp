@@ -96,5 +96,43 @@ int main() {
     };
   } | std::tuple{uint16_t(42), uint32_t(42), uint64_t(0xBAADF00DU), int16_t(-1), int32_t(-42), int64_t(0)};
 
+  /////////////////////////////////////////////////////////////////////////////
+
+  bdd::gherkin::steps steps = [](auto& steps) {
+    steps.feature("Addition") = [&] {
+      steps.scenario("*") = [&] {
+        steps.given("int32oe_t value = {value}") = [&](int32_t value) {
+          int32oe_t addend = value;
+          steps.when("I add {value}") = [&](int32_t value2) {
+            int32_t sum = addend + value2;
+            steps.then("I expect {value}") = [&](int32_t expected_sum) {
+              expect(sum == expected_sum);
+            };
+          };
+        };
+      };
+    };
+  };
+
+  "ERD-ENDIAN-0005: endian::OtherEndian integrals can perform integral arithmetic"_test
+    = steps |
+  R"(
+    Feature: Addition
+
+      Scenario: int32oe_t + int32_t
+        Given int32oe_t value = 42;
+          When I add 2
+          Then I expect 44
+      Scenario: int32oe_t + int32_t
+        Given int32oe_t value = 42;
+          When I add -2
+          Then I expect 40
+      Scenario: int32oe_t + int32_t
+        Given int32oe_t value = -54321;
+          When I add -1
+          Then I expect -54322
+
+  )";
+
   return 0;
 }
