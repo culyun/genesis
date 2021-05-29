@@ -102,11 +102,13 @@ int main() {
     steps.feature("Addition") = [&] {
       steps.scenario("*") = [&] {
         steps.given("int32oe_t value = {value}") = [&](int32_t value) {
-          int32oe_t addend = value;
+          int32oe_t lhs = value;
           steps.when("I add {value}") = [&](int32_t value2) {
-            int32_t sum = addend + value2;
+            int32_t sum = lhs + value2; // Regular addition via implicit conversion to int32_t
+            lhs += value2; // Compound Sum Assignment
             steps.then("I expect {value}") = [&](int32_t expected_sum) {
               expect(sum == expected_sum);
+              expect(lhs == expected_sum);
             };
           };
         };
