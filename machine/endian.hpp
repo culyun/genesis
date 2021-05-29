@@ -117,7 +117,30 @@ public:
     return *this; // return new value by reference
   }
 
-  // Postfix Decrement
+  // Compound Sum Assignment
+  OtherEndian & operator+=(StorageType const & rhs) {
+    setNativeValue(getNativeValue() + rhs);
+    return *this;
+  }
+
+  // Compound Difference Assignment
+  OtherEndian & operator-=(StorageType const & rhs) {
+    setNativeValue(getNativeValue() - rhs);
+    return *this;
+  }
+
+  // Compound Product Assignment
+  OtherEndian & operator*=(StorageType const & rhs) {
+    setNativeValue(getNativeValue() * rhs);
+    return *this;
+  }
+
+  // Compound Quotient Assignment
+  OtherEndian & operator/=(StorageType const & rhs) {
+    setNativeValue(getNativeValue() / rhs);
+    return *this;
+  }
+
   OtherEndian operator--(int) {
     OtherEndian old = *this; // copy old value
     operator--();  // prefix decrement
