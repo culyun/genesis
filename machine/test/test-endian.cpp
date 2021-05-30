@@ -17,6 +17,21 @@ using namespace boost::ut::bdd;
 using namespace boost::ut;
 using namespace culyun;
 
+void execute(auto && callable, auto && argsList)
+{
+  std::apply(
+    /* fold argsList */ [&callable](auto && ... args) {
+      (callable(args), ...);
+    },
+    std::move(argsList)
+  );
+}
+
+void execute2(auto && callable, auto && ... args)
+{
+  (callable(args), ...);
+}
+
 int main() {
   /////////////////////////////////////////////////////////////////////////////
 
@@ -135,6 +150,36 @@ int main() {
           Then I expect -54322
 
   )";
+
+  execute(
+    /* test = */ [](auto && args) {
+      auto augend = std::get<0>(args);
+      auto addend = std::get<1>(args);
+      auto sum = std::get<2>(args);
+      expect(augend + addend == sum);
+    },
+    /* argsList = */ std::tuple{
+      std::tuple{1, 1, 2},
+      std::tuple{int32_t(1), int64_t(2), 3}}
+  );
+
+  execute2(
+    /* test = */ [](auto && args) {
+      auto const augend = std::get<0>(args);
+      auto const addend = std::get<1>(args);
+      auto const sum = augend + addend;
+
+      endian::OtherEndian<decltype(augend)> augend_oe = augend;
+      endian::OtherEndian<decltype(addend)> addend_oe = addend;
+
+      expect(augend_oe + addend == sum);
+      expect(augend + addend_oe == sum);
+      expect(augend_oe + addend_oe == sum);
+    },
+    /* with these args = */
+      std::tuple{1, 1},
+      std::tuple{int32_t(1), int16_t(2)}
+  );
 
   return 0;
 }
