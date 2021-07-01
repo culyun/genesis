@@ -15,9 +15,12 @@ using namespace boost::ut::literals;
 using namespace boost::ut::operators::terse;
 using namespace boost::ut::bdd;
 using namespace boost::ut;
+
+using namespace ansi_code;
+
 using namespace culyun;
 
-void execute(auto && callable, auto && argsList)
+void execute1(auto && callable, auto && argsList)
 {
   std::apply(
     /* fold argsList */ [&callable](auto && ... args) {
@@ -27,7 +30,7 @@ void execute(auto && callable, auto && argsList)
   );
 }
 
-void execute2(auto && callable, auto && ... args)
+void execute(auto && callable, auto && ... args)
 {
   (callable(args), ...);
 }
@@ -151,19 +154,19 @@ int main() {
 
   )";
 
-  execute(
-    /* test = */ [](auto && args) {
-      auto augend = std::get<0>(args);
-      auto addend = std::get<1>(args);
-      auto sum = std::get<2>(args);
-      expect(augend + addend == sum);
-    },
-    /* argsList = */ std::tuple{
-      std::tuple{1, 1, 2},
-      std::tuple{int32_t(1), int64_t(2), 3}}
-  );
+  //execute1(
+  //  /* test = */ [](auto && args) {
+  //    auto augend = std::get<0>(args);
+  //    auto addend = std::get<1>(args);
+  //    auto sum = std::get<2>(args);
+  //    expect(augend + addend == sum);
+  //  },
+  //  /* argsList = */ std::tuple{
+  //    std::tuple{1, 1, 2},
+  //    std::tuple{int32_t(1), int64_t(2), 3}}
+  //);
 
-  execute2(
+  execute(
     /* test = */ [](auto && args) {
       auto const augend = std::get<0>(args);
       auto const addend = std::get<1>(args);
@@ -180,6 +183,40 @@ int main() {
       std::tuple{1, 1},
       std::tuple{int32_t(1), int16_t(2)}
   );
+
+
+  ////////////////////////////////////////
+
+  "ERD-ENDIAN-0137: endian::OtherEndian integrals can perform subtraction"_test = []()
+  {
+    execute(/* test = */ [](auto && args) {
+        auto augend = std::get<0>(args);
+        auto addend = std::get<1>(args);
+        auto sum = augend + addend;
+
+        ut_helper::log(
+            std::string(green) + type_support::friendly_name<decltype(augend)>() + "(" + std::to_string(augend) + ")" +
+            " + " +
+            std::string(cyan) + type_support::friendly_name<decltype(addend)>() + "(" + std::to_string(addend) + ")" +
+            " = " +
+            std::string(yellow) + type_support::friendly_name<decltype(sum)>() + "(" + std::to_string(sum) + ")\n" +
+            std::string(ansi_code::reset)
+        );
+
+        auto oeSum = endian::OtherEndian<decltype(augend)>(augend) + addend;
+        expect(sum == oeSum);
+
+        oeSum = augend + endian::OtherEndian<decltype(addend)>(addend);
+        expect(sum == oeSum);
+
+      },
+    /* with these args = */
+      std::tuple{1, int16_t(1)},
+      std::tuple{32, -42},
+      std::tuple{int32_t(1), int64_t(2)},
+      std::tuple{1, int16_t(2)}
+    );
+  };
 
   return 0;
 }

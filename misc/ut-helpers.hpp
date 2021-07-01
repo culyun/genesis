@@ -13,6 +13,7 @@ namespace ut = boost::ut;
 
 namespace ut_helper {
 
+
 struct printer : ut::printer
 {
   template <class T>
@@ -62,3 +63,12 @@ public:
 
 template <>
 auto ut::cfg<ut::override> = ut::runner<ut_helper::reporter>{};
+
+namespace ut_helper {
+
+void log(std::string_view const & message)
+{
+  ut::log << message;
+}
+
+}

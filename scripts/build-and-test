@@ -7,5 +7,5 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 
 #time g++ -Wall -std=c++20 "${REPO_ROOT}/main/main.cpp" -o "${REPO_ROOT}/test-machine" && "${REPO_ROOT}/test-machine"
 
-time g++ -Wall -std=c++20 -I "${REPO_ROOT}" -I "${REPO_ROOT}/ut/include" "${REPO_ROOT}/machine/test/test-endian.cpp" -o "${REPO_ROOT}/test-endian" && "${REPO_ROOT}/test-endian"
+time g++ -Wall -Wpessimizing-move -Wredundant-move -std=c++20 -I "${REPO_ROOT}" -I "${REPO_ROOT}/ut/include" "${REPO_ROOT}/machine/test/test-endian.cpp" -o "${REPO_ROOT}/test-endian" && "${REPO_ROOT}/test-endian"
 

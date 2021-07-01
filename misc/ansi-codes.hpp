@@ -3,6 +3,9 @@
 #include <string_view>
 
 namespace ansi_code {
+
+  using type = std::string_view;
+
   std::string_view reset                        = "\033[0m";
 
   std::string_view black                        = "\033[0;30m";
