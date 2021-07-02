@@ -37,7 +37,7 @@ void execute(auto && callable, auto && ... args)
   (callable(args), ...);
 }
 
-#if 0
+#if 1
 
 void testMisc()
 {
@@ -80,36 +80,6 @@ void testMisc()
           Then I expect -54322
 
   )";
-
-  //execute1(
-  //  /* test = */ [](auto && args) {
-  //    auto augend = std::get<0>(args);
-  //    auto addend = std::get<1>(args);
-  //    auto sum = std::get<2>(args);
-  //    expect(augend + addend == sum);
-  //  },
-  //  /* argsList = */ std::tuple{
-  //    std::tuple{1, 1, 2},
-  //    std::tuple{int32_t(1), int64_t(2), 3}}
-  //);
-
-  execute(
-    /* test = */ [](auto && args) {
-      auto const augend = std::get<0>(args);
-      auto const addend = std::get<1>(args);
-      auto const sum = augend + addend;
-
-      endian::OtherEndian<decltype(augend)> augend_oe = augend;
-      endian::OtherEndian<decltype(addend)> addend_oe = addend;
-
-      expect(augend_oe + addend == sum);
-      expect(augend + addend_oe == sum);
-      expect(augend_oe + addend_oe == sum);
-    },
-    /* with these args = */
-      std::tuple{1, 1},
-      std::tuple{int32_t(1), int16_t(2)}
-  );
 }
 
 void testStorage()
@@ -198,54 +168,134 @@ void testStorage()
 
 void testAddition(auto && args)
 {
-  "ERD-ENDIAN-0137: endian::OtherEndian integrals can perform addition"_test = [](auto && args)
-  {
-    execute(/* test = */ [](auto && args) {
-        auto augend = std::get<0>(args);
-        auto addend = std::get<1>(args);
-        auto sum = augend + addend;
+  ut_helper::log(text::concatenate(
+      bold_cyan, "ERD-ENDIAN-0137: endian::OtherEndian integrals can perform addition", reset));
 
-        ut_helper::log(text::concatenate(
-            ansi_code::green, type_support::friendly_name<decltype(augend)>() , "(" , std::to_string(augend) , ")" ,
-            ansi_code::bold_red, " + " ,
-            ansi_code::cyan , type_support::friendly_name<decltype(addend)>() , "(" , std::to_string(addend) , ")" ,
-            ansi_code::bold_red, " = " ,
-            ansi_code::yellow , type_support::friendly_name<decltype(sum)>() , "(" , std::to_string(sum) , ")\n" ,
-            ansi_code::reset
-        ));
+  execute1(/* test = */ [](auto && args) {
+      auto augend = std::get<0>(args);
+      auto addend = std::get<1>(args);
+      auto sum = augend + addend;
 
-        auto oeSum = endian::OtherEndian<decltype(augend)>(augend) + addend;
-        expect(sum == oeSum);
+      ut_helper::log(text::concatenate(
+          ansi_code::green, type_support::friendly_name<decltype(augend)>() , "(" , std::to_string(augend) , ")" ,
+          ansi_code::bold_red, " + " ,
+          ansi_code::cyan , type_support::friendly_name<decltype(addend)>() , "(" , std::to_string(addend) , ")" ,
+          ansi_code::bold_red, " = " ,
+          ansi_code::yellow , type_support::friendly_name<decltype(sum)>() , "(" , std::to_string(sum) , ")\n" ,
+          ansi_code::reset
+      ));
 
-        //oeSum = augend + endian::OtherEndian<decltype(addend)>(addend);
-        //expect(sum == oeSum);
+      auto oeSum = endian::OtherEndian<decltype(augend)>(augend) + addend;
+      expect(sum == oeSum);
 
-      },
-      args
-    );
-  } | args;
+      //oeSum = augend + endian::OtherEndian<decltype(addend)>(addend);
+      //expect(sum == oeSum);
+
+    },
+    args
+  );
+}
+
+void testSubtraction(auto && args)
+{
+  ut_helper::log(text::concatenate(
+      bold_cyan, "ERD-ENDIAN-0138: endian::OtherEndian integrals can perform subtraction", reset));
+
+  execute1(/* test = */ [](auto && args) {
+      auto minuend = std::get<0>(args);
+      auto subtrahend = std::get<1>(args);
+      auto difference = minuend - subtrahend;
+
+      ut_helper::log(text::concatenate(
+          ansi_code::green, type_support::friendly_name<decltype(minuend)>() , "(" , std::to_string(minuend) , ")" ,
+          ansi_code::bold_red, " - " ,
+          ansi_code::cyan , type_support::friendly_name<decltype(subtrahend)>() , "(" , std::to_string(subtrahend) , ")" ,
+          ansi_code::bold_red, " = " ,
+          ansi_code::yellow , type_support::friendly_name<decltype(difference)>() , "(" , std::to_string(difference) , ")\n" ,
+          ansi_code::reset
+      ));
+
+      auto oeDifference = endian::OtherEndian<decltype(minuend)>(minuend) - subtrahend;
+      expect(difference == oeDifference);
+
+      //oeDifference = minuend - endian::OtherEndian<decltype(subtrahend)>(subtrahend);
+      //expect(difference == oeDifference);
+
+    },
+    args
+  );
+}
+
+void testMultiplication(auto && args)
+{
+  ut_helper::log(text::concatenate(
+      bold_cyan, "ERD-ENDIAN-0139: endian::OtherEndian integrals can perform multiplication", reset));
+
+  execute1(/* test = */ [](auto && args) {
+      auto multiplicand = std::get<0>(args);
+      auto multiplier = std::get<1>(args);
+      auto product = multiplicand * multiplier;
+
+      ut_helper::log(text::concatenate(
+          ansi_code::green, type_support::friendly_name<decltype(multiplicand)>() , "(" , std::to_string(multiplicand) , ")" ,
+          ansi_code::bold_red, " * " ,
+          ansi_code::cyan , type_support::friendly_name<decltype(multiplier)>() , "(" , std::to_string(multiplier) , ")" ,
+          ansi_code::bold_red, " = " ,
+          ansi_code::yellow , type_support::friendly_name<decltype(product)>() , "(" , std::to_string(product) , ")\n" ,
+          ansi_code::reset
+      ));
+
+      auto oeProduct = endian::OtherEndian<decltype(multiplicand)>(multiplicand) * multiplier;
+      expect(product == oeProduct);
+
+      //oeProduct = multiplicand * endian::OtherEndian<decltype(multiplier)>(multiplier);
+      //expect(product == oeProduct);
+
+    },
+    args
+  );
+}
+
+void testDivision(auto && args)
+{
+  ut_helper::log(text::concatenate(
+      bold_cyan, "ERD-ENDIAN-0140: endian::OtherEndian integrals can perform multiplication", reset));
+
+  execute1(/* test = */ [](auto && args) {
+      auto dividend = std::get<0>(args);
+      auto divisor = std::get<1>(args);
+      auto quotient = dividend / divisor;
+
+      ut_helper::log(text::concatenate(
+          ansi_code::green, type_support::friendly_name<decltype(dividend)>() , "(" , std::to_string(dividend) , ")" ,
+          ansi_code::bold_red, " / " ,
+          ansi_code::cyan , type_support::friendly_name<decltype(divisor)>() , "(" , std::to_string(divisor) , ")" ,
+          ansi_code::bold_red, " = " ,
+          ansi_code::yellow , type_support::friendly_name<decltype(quotient)>() , "(" , std::to_string(quotient) , ")\n" ,
+          ansi_code::reset
+      ));
+
+      auto oeQuotient = endian::OtherEndian<decltype(dividend)>(dividend) / divisor;
+      expect(quotient == oeQuotient);
+
+      //oeQuotient = dividend / endian::OtherEndian<decltype(divisor)>(divisor);
+      //expect(quotient == oeQuotient);
+
+    },
+    args
+  );
 }
 
 int main() {
 
-  auto const args = std::tuple{
-      // a + 0 = a
-      std::tuple{std::numeric_limits<int>::min(), 0},
-      std::tuple{-2, 0},
-      std::tuple{-1, 0},
-      std::tuple{0, 0},
-      std::tuple{1, 0},
-      std::tuple{2, 0},
-      std::tuple{std::numeric_limits<int>::max(), 0},
-      // 0 + b = b
+  auto const smallValuePairs = std::tuple{
       std::tuple{0, std::numeric_limits<int>::min(), 0},
       std::tuple{0, -2},
       std::tuple{0, -1},
-      std::tuple{0, 0},
       std::tuple{0, 1},
       std::tuple{0, 2},
       std::tuple{0, std::numeric_limits<int>::max()},
-      // a + 1 = a
+
       std::tuple{std::numeric_limits<int>::min(), 1},
       std::tuple{-2, 1},
       std::tuple{-1, 1},
@@ -253,23 +303,51 @@ int main() {
       std::tuple{1, 1},
       std::tuple{2, 1},
       std::tuple{std::numeric_limits<int>::max(), 1},
-      // 1 + b = b
+
       std::tuple{1, std::numeric_limits<int>::min(), 1},
       std::tuple{1, -2},
       std::tuple{1, -1},
-      std::tuple{1, 0},
       std::tuple{1, 1},
       std::tuple{1, 2},
       std::tuple{1, std::numeric_limits<int>::max()},
-      // 0 + b = b
+  };
 
+  // Divide by zero Warning.  Do not use with division tests
+  auto const zeroValuePairs = std::tuple{
+      std::tuple{std::numeric_limits<int>::min(), 0},
+      std::tuple{-2, 0},
+      std::tuple{-1, 0},
+      std::tuple{0, 0},
+      std::tuple{1, 0},
+      std::tuple{2, 0},
+      std::tuple{std::numeric_limits<int>::max(), 0},
+      std::tuple{0, std::numeric_limits<int>::min(), 0},
+      std::tuple{0, -2},
+      std::tuple{0, -1},
+      std::tuple{0, 0},
+      std::tuple{0, 1},
+      std::tuple{0, 2},
+      std::tuple{0, std::numeric_limits<int>::max()},
+  };
+
+  auto const miscPairs = std::tuple{
       std::tuple{1, int16_t(1)},
       std::tuple{32, -42},
       std::tuple{int32_t(1), int64_t(2)},
       std::tuple{1, int16_t(2)}
   };
 
+  auto const args = std::tuple_cat(smallValuePairs, zeroValuePairs, miscPairs);
+  auto const divisionArgs = std::tuple_cat(smallValuePairs, miscPairs);
+
+  /////////////////////////////////////////////////////////////////////////////
+
+  testStorage();
   testAddition(args);
+  testSubtraction(args);
+  testMultiplication(args);
+  testDivision(divisionArgs);
+  testMisc();
 
   return 0;
 }
