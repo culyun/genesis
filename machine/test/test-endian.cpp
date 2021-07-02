@@ -1,5 +1,6 @@
 #include <string>
 #include <iostream>
+#include <limits>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -7,6 +8,7 @@
 #include <boost/ut.hpp>
 
 #include <machine/endian.hpp>
+#include <misc/text.hpp>
 #include <misc/ansi-codes.hpp>
 #include <misc/type-names.hpp>
 #include <misc/ut-helpers.hpp>
@@ -35,7 +37,83 @@ void execute(auto && callable, auto && ... args)
   (callable(args), ...);
 }
 
-int main() {
+#if 0
+
+void testMisc()
+{
+  /////////////////////////////////////////////////////////////////////////////
+
+  bdd::gherkin::steps steps = [](auto& steps) {
+    steps.feature("Addition") = [&] {
+      steps.scenario("*") = [&] {
+        steps.given("int32oe_t value = {value}") = [&](int32_t value) {
+          int32oe_t lhs = value;
+          steps.when("I add {value}") = [&](int32_t value2) {
+            int32_t sum = lhs + value2; // Regular addition via implicit conversion to int32_t
+            lhs += value2; // Compound Sum Assignment
+            steps.then("I expect {value}") = [&](int32_t expected_sum) {
+              expect(sum == expected_sum);
+              expect(lhs == expected_sum);
+            };
+          };
+        };
+      };
+    };
+  };
+
+  "ERD-ENDIAN-0005: endian::OtherEndian integrals can perform integral arithmetic"_test
+    = steps |
+  R"(
+    Feature: Addition
+
+      Scenario: int32oe_t + int32_t
+        Given int32oe_t value = 42;
+          When I add 2
+          Then I expect 44
+      Scenario: int32oe_t + int32_t
+        Given int32oe_t value = 42;
+          When I add -2
+          Then I expect 40
+      Scenario: int32oe_t + int32_t
+        Given int32oe_t value = -54321;
+          When I add -1
+          Then I expect -54322
+
+  )";
+
+  //execute1(
+  //  /* test = */ [](auto && args) {
+  //    auto augend = std::get<0>(args);
+  //    auto addend = std::get<1>(args);
+  //    auto sum = std::get<2>(args);
+  //    expect(augend + addend == sum);
+  //  },
+  //  /* argsList = */ std::tuple{
+  //    std::tuple{1, 1, 2},
+  //    std::tuple{int32_t(1), int64_t(2), 3}}
+  //);
+
+  execute(
+    /* test = */ [](auto && args) {
+      auto const augend = std::get<0>(args);
+      auto const addend = std::get<1>(args);
+      auto const sum = augend + addend;
+
+      endian::OtherEndian<decltype(augend)> augend_oe = augend;
+      endian::OtherEndian<decltype(addend)> addend_oe = addend;
+
+      expect(augend_oe + addend == sum);
+      expect(augend + addend_oe == sum);
+      expect(augend_oe + addend_oe == sum);
+    },
+    /* with these args = */
+      std::tuple{1, 1},
+      std::tuple{int32_t(1), int16_t(2)}
+  );
+}
+
+void testStorage()
+{
   /////////////////////////////////////////////////////////////////////////////
 
   "ERD-ENDIAN-0001: endian::ReverseBytes reverses the byte ordering of the underlying data"_test
@@ -114,109 +192,84 @@ int main() {
     };
   } | std::tuple{uint16_t(42), uint32_t(42), uint64_t(0xBAADF00DU), int16_t(-1), int32_t(-42), int64_t(0)};
 
-  /////////////////////////////////////////////////////////////////////////////
+}
 
-  bdd::gherkin::steps steps = [](auto& steps) {
-    steps.feature("Addition") = [&] {
-      steps.scenario("*") = [&] {
-        steps.given("int32oe_t value = {value}") = [&](int32_t value) {
-          int32oe_t lhs = value;
-          steps.when("I add {value}") = [&](int32_t value2) {
-            int32_t sum = lhs + value2; // Regular addition via implicit conversion to int32_t
-            lhs += value2; // Compound Sum Assignment
-            steps.then("I expect {value}") = [&](int32_t expected_sum) {
-              expect(sum == expected_sum);
-              expect(lhs == expected_sum);
-            };
-          };
-        };
-      };
-    };
-  };
+#endif
 
-  "ERD-ENDIAN-0005: endian::OtherEndian integrals can perform integral arithmetic"_test
-    = steps |
-  R"(
-    Feature: Addition
-
-      Scenario: int32oe_t + int32_t
-        Given int32oe_t value = 42;
-          When I add 2
-          Then I expect 44
-      Scenario: int32oe_t + int32_t
-        Given int32oe_t value = 42;
-          When I add -2
-          Then I expect 40
-      Scenario: int32oe_t + int32_t
-        Given int32oe_t value = -54321;
-          When I add -1
-          Then I expect -54322
-
-  )";
-
-  //execute1(
-  //  /* test = */ [](auto && args) {
-  //    auto augend = std::get<0>(args);
-  //    auto addend = std::get<1>(args);
-  //    auto sum = std::get<2>(args);
-  //    expect(augend + addend == sum);
-  //  },
-  //  /* argsList = */ std::tuple{
-  //    std::tuple{1, 1, 2},
-  //    std::tuple{int32_t(1), int64_t(2), 3}}
-  //);
-
-  execute(
-    /* test = */ [](auto && args) {
-      auto const augend = std::get<0>(args);
-      auto const addend = std::get<1>(args);
-      auto const sum = augend + addend;
-
-      endian::OtherEndian<decltype(augend)> augend_oe = augend;
-      endian::OtherEndian<decltype(addend)> addend_oe = addend;
-
-      expect(augend_oe + addend == sum);
-      expect(augend + addend_oe == sum);
-      expect(augend_oe + addend_oe == sum);
-    },
-    /* with these args = */
-      std::tuple{1, 1},
-      std::tuple{int32_t(1), int16_t(2)}
-  );
-
-
-  ////////////////////////////////////////
-
-  "ERD-ENDIAN-0137: endian::OtherEndian integrals can perform subtraction"_test = []()
+void testAddition(auto && args)
+{
+  "ERD-ENDIAN-0137: endian::OtherEndian integrals can perform addition"_test = [](auto && args)
   {
     execute(/* test = */ [](auto && args) {
         auto augend = std::get<0>(args);
         auto addend = std::get<1>(args);
         auto sum = augend + addend;
 
-        ut_helper::log(
-            std::string(green) + type_support::friendly_name<decltype(augend)>() + "(" + std::to_string(augend) + ")" +
-            " + " +
-            std::string(cyan) + type_support::friendly_name<decltype(addend)>() + "(" + std::to_string(addend) + ")" +
-            " = " +
-            std::string(yellow) + type_support::friendly_name<decltype(sum)>() + "(" + std::to_string(sum) + ")\n" +
-            std::string(ansi_code::reset)
-        );
+        ut_helper::log(text::concatenate(
+            ansi_code::green, type_support::friendly_name<decltype(augend)>() , "(" , std::to_string(augend) , ")" ,
+            ansi_code::bold_red, " + " ,
+            ansi_code::cyan , type_support::friendly_name<decltype(addend)>() , "(" , std::to_string(addend) , ")" ,
+            ansi_code::bold_red, " = " ,
+            ansi_code::yellow , type_support::friendly_name<decltype(sum)>() , "(" , std::to_string(sum) , ")\n" ,
+            ansi_code::reset
+        ));
 
         auto oeSum = endian::OtherEndian<decltype(augend)>(augend) + addend;
         expect(sum == oeSum);
 
-        oeSum = augend + endian::OtherEndian<decltype(addend)>(addend);
-        expect(sum == oeSum);
+        //oeSum = augend + endian::OtherEndian<decltype(addend)>(addend);
+        //expect(sum == oeSum);
 
       },
-    /* with these args = */
+      args
+    );
+  } | args;
+}
+
+int main() {
+
+  auto const args = std::tuple{
+      // a + 0 = a
+      std::tuple{std::numeric_limits<int>::min(), 0},
+      std::tuple{-2, 0},
+      std::tuple{-1, 0},
+      std::tuple{0, 0},
+      std::tuple{1, 0},
+      std::tuple{2, 0},
+      std::tuple{std::numeric_limits<int>::max(), 0},
+      // 0 + b = b
+      std::tuple{0, std::numeric_limits<int>::min(), 0},
+      std::tuple{0, -2},
+      std::tuple{0, -1},
+      std::tuple{0, 0},
+      std::tuple{0, 1},
+      std::tuple{0, 2},
+      std::tuple{0, std::numeric_limits<int>::max()},
+      // a + 1 = a
+      std::tuple{std::numeric_limits<int>::min(), 1},
+      std::tuple{-2, 1},
+      std::tuple{-1, 1},
+      std::tuple{0, 1},
+      std::tuple{1, 1},
+      std::tuple{2, 1},
+      std::tuple{std::numeric_limits<int>::max(), 1},
+      // 1 + b = b
+      std::tuple{1, std::numeric_limits<int>::min(), 1},
+      std::tuple{1, -2},
+      std::tuple{1, -1},
+      std::tuple{1, 0},
+      std::tuple{1, 1},
+      std::tuple{1, 2},
+      std::tuple{1, std::numeric_limits<int>::max()},
+      // 0 + b = b
+
       std::tuple{1, int16_t(1)},
       std::tuple{32, -42},
       std::tuple{int32_t(1), int64_t(2)},
       std::tuple{1, int16_t(2)}
-    );
   };
+
+  testAddition(args);
 
   return 0;
 }
