@@ -37,7 +37,7 @@ void execute(auto && callable, auto && ... args)
   (callable(args), ...);
 }
 
-#if 1
+#if 0
 
 void testMisc()
 {
@@ -169,7 +169,7 @@ void testStorage()
 void testAddition(auto && args)
 {
   ut_helper::log(text::concatenate(
-      bold_cyan, "ERD-ENDIAN-0137: endian::OtherEndian integrals can perform addition", reset));
+      bold_cyan, "ERD-ENDIAN-0137: endian::OtherEndian integrals can perform addition operations", reset));
 
   execute1(/* test = */ [](auto && args) {
       auto augend = std::get<0>(args);
@@ -216,7 +216,7 @@ void testAddition(auto && args)
 void testSubtraction(auto && args)
 {
   ut_helper::log(text::concatenate(
-      bold_cyan, "ERD-ENDIAN-0138: endian::OtherEndian integrals can perform subtraction", reset));
+      bold_cyan, "ERD-ENDIAN-0138: endian::OtherEndian integrals can perform subtraction operations", reset));
 
   execute1(/* test = */ [](auto && args) {
       auto minuend = std::get<0>(args);
@@ -252,7 +252,7 @@ void testSubtraction(auto && args)
 void testMultiplication(auto && args)
 {
   ut_helper::log(text::concatenate(
-      bold_cyan, "ERD-ENDIAN-0139: endian::OtherEndian integrals can perform multiplication", reset));
+      bold_cyan, "ERD-ENDIAN-0139: endian::OtherEndian integrals can perform multiplication operations", reset));
 
   execute1(/* test = */ [](auto && args) {
       auto multiplicand = std::get<0>(args);
@@ -299,7 +299,7 @@ void testMultiplication(auto && args)
 void testDivision(auto && args)
 {
   ut_helper::log(text::concatenate(
-      bold_cyan, "ERD-ENDIAN-0140: endian::OtherEndian integrals can perform multiplication", reset));
+      bold_cyan, "ERD-ENDIAN-0140: endian::OtherEndian integrals can perform division operations", reset));
 
   execute1(/* test = */ [](auto && args) {
       auto dividend = std::get<0>(args);
@@ -327,6 +327,42 @@ void testDivision(auto && args)
 
       oeQuotient = endian::OtherEndian<decltype(dividend)>(dividend) / endian::OtherEndian<decltype(divisor)>(divisor);
       expect(quotient == oeQuotient);
+    },
+    args
+  );
+}
+
+void testModulo(auto && args)
+{
+  ut_helper::log(text::concatenate(
+      bold_cyan, "ERD-ENDIAN-0141: endian::OtherEndian integrals can perform modulo operations", reset));
+
+  execute1(/* test = */ [](auto && args) {
+      auto dividend = std::get<0>(args);
+      auto modulus = std::get<1>(args);
+      auto remainder = dividend % modulus;
+
+      ut_helper::log(text::concatenate(
+          ansi_code::green, type_support::friendly_name<decltype(dividend)>() , "(" , std::to_string(dividend) , ")" ,
+          ansi_code::bold_red, " % " ,
+          ansi_code::cyan , type_support::friendly_name<decltype(modulus)>() , "(" , std::to_string(modulus) , ")" ,
+          ansi_code::bold_red, " = " ,
+          ansi_code::yellow , type_support::friendly_name<decltype(remainder)>() , "(" , std::to_string(remainder) , ")\n" ,
+          ansi_code::reset
+      ));
+
+      decltype(remainder) oeRemainder;
+
+      // Test all permutations of native and oe arguments
+
+      oeRemainder = endian::OtherEndian<decltype(dividend)>(dividend) % modulus;
+      expect(remainder == oeRemainder);
+
+      oeRemainder = dividend % endian::OtherEndian<decltype(modulus)>(modulus);
+      expect(remainder == oeRemainder);
+
+      oeRemainder = endian::OtherEndian<decltype(dividend)>(dividend) % endian::OtherEndian<decltype(modulus)>(modulus);
+      expect(remainder == oeRemainder);
     },
     args
   );
@@ -388,12 +424,13 @@ int main() {
 
   /////////////////////////////////////////////////////////////////////////////
 
-  testStorage();
+  //testStorage();
   testAddition(args);
   testSubtraction(args);
   testMultiplication(args);
   testDivision(divisionArgs);
-  testMisc();
+  testModulo(divisionArgs);
+  //testMisc();
 
   return 0;
 }
