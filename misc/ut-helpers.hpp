@@ -5,14 +5,9 @@
 #include <boost/ut.hpp>
 #include <misc/ansi-codes.hpp>
 
-using namespace boost::ut::literals;
-using namespace boost::ut::operators::terse;
-using namespace boost::ut::bdd;
-using namespace boost::ut;
 namespace ut = boost::ut;
 
 namespace ut_helper {
-
 
 struct printer : ut::printer
 {

@@ -13,14 +13,10 @@
 #include <misc/type-names.hpp>
 #include <misc/ut-helpers.hpp>
 
-using namespace boost::ut::literals;
-using namespace boost::ut::operators::terse;
-using namespace boost::ut::bdd;
-using namespace boost::ut;
-
 using namespace ansi_code;
-
 using namespace culyun;
+
+namespace ut = boost::ut;
 
 void execute1(auto && callable, auto && argsList)
 {
@@ -37,7 +33,14 @@ void execute(auto && callable, auto && ... args)
   (callable(args), ...);
 }
 
-#if 0
+#if 1
+
+namespace {
+
+using namespace boost::ut::literals;
+using namespace boost::ut::operators::terse;
+using namespace boost::ut::bdd;
+using namespace boost::ut;
 
 void testMisc()
 {
@@ -52,8 +55,8 @@ void testMisc()
             int32_t sum = lhs + value2; // Regular addition via implicit conversion to int32_t
             lhs += value2; // Compound Sum Assignment
             steps.then("I expect {value}") = [&](int32_t expected_sum) {
-              expect(sum == expected_sum);
-              expect(lhs == expected_sum);
+              ut::expect(sum == expected_sum);
+              ut::expect(lhs == expected_sum);
             };
           };
         };
@@ -98,7 +101,7 @@ void testStorage()
         then("the resulting byte-ordering should be reversed") = [&]
         {
           for (unsigned i = 0 ; i < sizeof(EndianIntegral) ; ++i) {
-            expect(*(reinterpret_cast<uint8_t const *>(&testValue) + i) == *(reinterpret_cast<uint8_t const *>(&reversedValue) + sizeof(EndianIntegral) - 1 - i));
+            ut::expect(*(reinterpret_cast<uint8_t const *>(&testValue) + i) == *(reinterpret_cast<uint8_t const *>(&reversedValue) + sizeof(EndianIntegral) - 1 - i));
           }
         };
       };
@@ -119,8 +122,8 @@ void testStorage()
         then("the byte-ordering should be reversed") = [&]
         {
           EndianIntegral const encoded = other.getEncodedValue();
-          expect(encoded == endian::ReverseBytes(testValue));
-          expect(endian::ReverseBytes(encoded) == testValue);
+          ut::expect(encoded == endian::ReverseBytes(testValue));
+          ut::expect(endian::ReverseBytes(encoded) == testValue);
         };
       };
     };
@@ -148,14 +151,14 @@ void testStorage()
           // compare after back assignment
 
           EndianIntegral receivedValue = transport;
-          expect(receivedValue == testValue);
+          ut::expect(receivedValue == testValue);
           receivedValue = transport2;
-          expect(receivedValue == testValue);
+          ut::expect(receivedValue == testValue);
 
           // compare after implicit conversion
 
-          expect(transport == testValue);
-          expect(transport2 == testValue);
+          ut::expect(transport == testValue);
+          ut::expect(transport2 == testValue);
 
         };
       };
@@ -163,6 +166,8 @@ void testStorage()
   } | std::tuple{uint16_t(42), uint32_t(42), uint64_t(0xBAADF00DU), int16_t(-1), int32_t(-42), int64_t(0)};
 
 }
+
+} // anonymous namespace
 
 #endif
 
@@ -190,24 +195,24 @@ void testAddition(auto && args)
       // Test all permutations of native and oe arguments
 
       oeSum = endian::OtherEndian<decltype(augend)>(augend) + addend;
-      expect(sum == oeSum);
+      ut::expect(sum == oeSum);
 
       oeSum = augend + endian::OtherEndian<decltype(addend)>(addend);
-      expect(sum == oeSum);
+      ut::expect(sum == oeSum);
 
       oeSum = endian::OtherEndian<decltype(augend)>(augend) + endian::OtherEndian<decltype(addend)>(addend);
-      expect(sum == oeSum);
+      ut::expect(sum == oeSum);
 
       // Test commutability with all argument permutations...
 
       oeSum = endian::OtherEndian<decltype(addend)>(addend) + augend;
-      expect(sum == oeSum);
+      ut::expect(sum == oeSum);
 
       oeSum = addend + endian::OtherEndian<decltype(augend)>(augend);
-      expect(sum == oeSum);
+      ut::expect(sum == oeSum);
 
       oeSum = endian::OtherEndian<decltype(addend)>(addend) + endian::OtherEndian<decltype(augend)>(augend);
-      expect(sum == oeSum);
+      ut::expect(sum == oeSum);
     },
     args
   );
@@ -237,13 +242,13 @@ void testSubtraction(auto && args)
       // Test all permutations of native and oe arguments
 
       oeDifference = endian::OtherEndian<decltype(minuend)>(minuend) - subtrahend;
-      expect(difference == oeDifference);
+      ut::expect(difference == oeDifference);
 
       oeDifference = minuend - endian::OtherEndian<decltype(subtrahend)>(subtrahend);
-      expect(difference == oeDifference);
+      ut::expect(difference == oeDifference);
 
       oeDifference = endian::OtherEndian<decltype(minuend)>(minuend) - endian::OtherEndian<decltype(subtrahend)>(subtrahend);
-      expect(difference == oeDifference);
+      ut::expect(difference == oeDifference);
     },
     args
   );
@@ -273,24 +278,24 @@ void testMultiplication(auto && args)
       // Test all permutations of native and oe arguments
 
       oeProduct = endian::OtherEndian<decltype(multiplicand)>(multiplicand) * multiplier;
-      expect(product == oeProduct);
+      ut::expect(product == oeProduct);
 
       oeProduct = multiplicand * endian::OtherEndian<decltype(multiplier)>(multiplier);
-      expect(product == oeProduct);
+      ut::expect(product == oeProduct);
 
       oeProduct = endian::OtherEndian<decltype(multiplicand)>(multiplicand)  * endian::OtherEndian<decltype(multiplier)>(multiplier);
-      expect(product == oeProduct);
+      ut::expect(product == oeProduct);
 
       // Test commutability with all argument permutations...
 
       oeProduct = endian::OtherEndian<decltype(multiplier)>(multiplier) * multiplicand;
-      expect(product == oeProduct);
+      ut::expect(product == oeProduct);
 
-      oeProduct = multiplicand * endian::OtherEndian<decltype(multiplicand)>(multiplicand);
-      expect(product == oeProduct);
+      oeProduct = multiplier * endian::OtherEndian<decltype(multiplicand)>(multiplicand);
+      ut::expect(product == oeProduct);
 
       oeProduct = endian::OtherEndian<decltype(multiplier)>(multiplier)  * endian::OtherEndian<decltype(multiplicand)>(multiplicand);
-      expect(product == oeProduct);
+      ut::expect(product == oeProduct);
     },
     args
   );
@@ -320,13 +325,13 @@ void testDivision(auto && args)
       // Test all permutations of native and oe arguments
 
       oeQuotient = endian::OtherEndian<decltype(dividend)>(dividend) / divisor;
-      expect(quotient == oeQuotient);
+      ut::expect(quotient == oeQuotient);
 
       oeQuotient = dividend / endian::OtherEndian<decltype(divisor)>(divisor);
-      expect(quotient == oeQuotient);
+      ut::expect(quotient == oeQuotient);
 
       oeQuotient = endian::OtherEndian<decltype(dividend)>(dividend) / endian::OtherEndian<decltype(divisor)>(divisor);
-      expect(quotient == oeQuotient);
+      ut::expect(quotient == oeQuotient);
     },
     args
   );
@@ -356,13 +361,13 @@ void testModulo(auto && args)
       // Test all permutations of native and oe arguments
 
       oeRemainder = endian::OtherEndian<decltype(dividend)>(dividend) % modulus;
-      expect(remainder == oeRemainder);
+      ut::expect(remainder == oeRemainder);
 
       oeRemainder = dividend % endian::OtherEndian<decltype(modulus)>(modulus);
-      expect(remainder == oeRemainder);
+      ut::expect(remainder == oeRemainder);
 
       oeRemainder = endian::OtherEndian<decltype(dividend)>(dividend) % endian::OtherEndian<decltype(modulus)>(modulus);
-      expect(remainder == oeRemainder);
+      ut::expect(remainder == oeRemainder);
     },
     args
   );
@@ -424,13 +429,21 @@ int main() {
 
   /////////////////////////////////////////////////////////////////////////////
 
-  //testStorage();
+  // Storage, Conversion, and Type Punning
+
+  testStorage();
+
+  // Arithmetic Operations
+
   testAddition(args);
   testSubtraction(args);
   testMultiplication(args);
   testDivision(divisionArgs);
   testModulo(divisionArgs);
-  //testMisc();
+
+  // Misc
+
+  testMisc();
 
   return 0;
 }
