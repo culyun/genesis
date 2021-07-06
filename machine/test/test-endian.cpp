@@ -185,12 +185,29 @@ void testAddition(auto && args)
           ansi_code::reset
       ));
 
-      auto oeSum = endian::OtherEndian<decltype(augend)>(augend) + addend;
+      decltype(sum) oeSum;
+
+      // Test all permutations of native and oe arguments
+
+      oeSum = endian::OtherEndian<decltype(augend)>(augend) + addend;
       expect(sum == oeSum);
 
-      //oeSum = augend + endian::OtherEndian<decltype(addend)>(addend);
-      //expect(sum == oeSum);
+      oeSum = augend + endian::OtherEndian<decltype(addend)>(addend);
+      expect(sum == oeSum);
 
+      oeSum = endian::OtherEndian<decltype(augend)>(augend) + endian::OtherEndian<decltype(addend)>(addend);
+      expect(sum == oeSum);
+
+      // Test commutability with all argument permutations...
+
+      oeSum = endian::OtherEndian<decltype(addend)>(addend) + augend;
+      expect(sum == oeSum);
+
+      oeSum = addend + endian::OtherEndian<decltype(augend)>(augend);
+      expect(sum == oeSum);
+
+      oeSum = endian::OtherEndian<decltype(addend)>(addend) + endian::OtherEndian<decltype(augend)>(augend);
+      expect(sum == oeSum);
     },
     args
   );
@@ -215,12 +232,18 @@ void testSubtraction(auto && args)
           ansi_code::reset
       ));
 
-      auto oeDifference = endian::OtherEndian<decltype(minuend)>(minuend) - subtrahend;
+      decltype(difference) oeDifference;
+
+      // Test all permutations of native and oe arguments
+
+      oeDifference = endian::OtherEndian<decltype(minuend)>(minuend) - subtrahend;
       expect(difference == oeDifference);
 
-      //oeDifference = minuend - endian::OtherEndian<decltype(subtrahend)>(subtrahend);
-      //expect(difference == oeDifference);
+      oeDifference = minuend - endian::OtherEndian<decltype(subtrahend)>(subtrahend);
+      expect(difference == oeDifference);
 
+      oeDifference = endian::OtherEndian<decltype(minuend)>(minuend) - endian::OtherEndian<decltype(subtrahend)>(subtrahend);
+      expect(difference == oeDifference);
     },
     args
   );
@@ -245,12 +268,29 @@ void testMultiplication(auto && args)
           ansi_code::reset
       ));
 
-      auto oeProduct = endian::OtherEndian<decltype(multiplicand)>(multiplicand) * multiplier;
+      decltype(product) oeProduct;
+
+      // Test all permutations of native and oe arguments
+
+      oeProduct = endian::OtherEndian<decltype(multiplicand)>(multiplicand) * multiplier;
       expect(product == oeProduct);
 
-      //oeProduct = multiplicand * endian::OtherEndian<decltype(multiplier)>(multiplier);
-      //expect(product == oeProduct);
+      oeProduct = multiplicand * endian::OtherEndian<decltype(multiplier)>(multiplier);
+      expect(product == oeProduct);
 
+      oeProduct = endian::OtherEndian<decltype(multiplicand)>(multiplicand)  * endian::OtherEndian<decltype(multiplier)>(multiplier);
+      expect(product == oeProduct);
+
+      // Test commutability with all argument permutations...
+
+      oeProduct = endian::OtherEndian<decltype(multiplier)>(multiplier) * multiplicand;
+      expect(product == oeProduct);
+
+      oeProduct = multiplicand * endian::OtherEndian<decltype(multiplicand)>(multiplicand);
+      expect(product == oeProduct);
+
+      oeProduct = endian::OtherEndian<decltype(multiplier)>(multiplier)  * endian::OtherEndian<decltype(multiplicand)>(multiplicand);
+      expect(product == oeProduct);
     },
     args
   );
@@ -275,12 +315,18 @@ void testDivision(auto && args)
           ansi_code::reset
       ));
 
-      auto oeQuotient = endian::OtherEndian<decltype(dividend)>(dividend) / divisor;
+      decltype(quotient) oeQuotient;
+
+      // Test all permutations of native and oe arguments
+
+      oeQuotient = endian::OtherEndian<decltype(dividend)>(dividend) / divisor;
       expect(quotient == oeQuotient);
 
-      //oeQuotient = dividend / endian::OtherEndian<decltype(divisor)>(divisor);
-      //expect(quotient == oeQuotient);
+      oeQuotient = dividend / endian::OtherEndian<decltype(divisor)>(divisor);
+      expect(quotient == oeQuotient);
 
+      oeQuotient = endian::OtherEndian<decltype(dividend)>(dividend) / endian::OtherEndian<decltype(divisor)>(divisor);
+      expect(quotient == oeQuotient);
     },
     args
   );
