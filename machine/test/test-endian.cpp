@@ -373,6 +373,57 @@ void testModulo(auto && args)
   );
 }
 
+#if 0
+
+void testBitwiseOr(auto && args)
+{
+  ut_helper::log(text::concatenate(
+      bold_cyan, "ERD-ENDIAN-0142: endian::OtherEndian integrals can perform bitwise OR operations", reset));
+
+  execute1(/* test = */ [](auto && args) {
+      auto lhs = std::get<0>(args);
+      auto rhs = std::get<1>(args);
+      auto result = lhs | rhs;
+
+      ut_helper::log(text::concatenate(
+          ansi_code::green, type_support::friendly_name<decltype(lhs)>() , "(" , std::to_string(lhs) , ")" ,
+          ansi_code::bold_red, " | " ,
+          ansi_code::cyan , type_support::friendly_name<decltype(rhs)>() , "(" , std::to_string(rhs) , ")" ,
+          ansi_code::bold_red, " = " ,
+          ansi_code::yellow , type_support::friendly_name<decltype(result)>() , "(" , std::to_string(result) , ")\n" ,
+          ansi_code::reset
+      ));
+
+      decltype(result) oeResult;
+
+      // Test all permutations of native and oe arguments
+
+      oeResult = endian::OtherEndian<decltype(lhs)>(lhs) | rhs;
+      ut::expect(result == oeResult);
+
+      oeResult = lhs | endian::OtherEndian<decltype(rhs)>(rhs);
+      ut::expect(result == oeResult);
+
+      oeResult = endian::OtherEndian<decltype(lhs)>(lhs) | endian::OtherEndian<decltype(rhs)>(rhs);
+      ut::expect(result == oeResult);
+
+      // Test commutability with all argument permutations...
+
+      oeResult = endian::OtherEndian<decltype(rhs)>(rhs) | lhs;
+      ut::expect(result == oeResult);
+
+      oeResult = rhs | endian::OtherEndian<decltype(lhs)>(lhs);
+      ut::expect(result == oeResult);
+
+      oeResult = endian::OtherEndian<decltype(rhs)>(rhs) | endian::OtherEndian<decltype(lhs)>(lhs);
+      ut::expect(result == oeResult);
+    },
+    args
+  );
+}
+
+#endif
+
 int main() {
 
   auto const smallValuePairs = std::tuple{
@@ -426,6 +477,7 @@ int main() {
 
   auto const args = std::tuple_cat(smallValuePairs, zeroValuePairs, miscPairs);
   auto const divisionArgs = std::tuple_cat(smallValuePairs, miscPairs);
+  //auto const bitwiseArgs = std::tuple_cat(smallValuePairs, zeroValuePairs); // Types must be the same rank
 
   /////////////////////////////////////////////////////////////////////////////
 
@@ -440,6 +492,10 @@ int main() {
   testMultiplication(args);
   testDivision(divisionArgs);
   testModulo(divisionArgs);
+
+  // Bitwise Operations
+
+  //testBitwiseOr(bitwiseArgs);
 
   // Misc
 
