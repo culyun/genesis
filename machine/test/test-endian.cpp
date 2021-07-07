@@ -13,10 +13,13 @@
 #include <misc/type-names.hpp>
 #include <misc/ut-helpers.hpp>
 
+#undef TEST_MISC_OTHER_ENDIAN_BEHAVIOURS
+
 using namespace ansi_code;
 using namespace culyun;
 
 namespace ut = boost::ut;
+using namespace boost::ut::bdd;
 
 void execute1(auto && callable, auto && argsList)
 {
@@ -33,14 +36,16 @@ void execute(auto && callable, auto && ... args)
   (callable(args), ...);
 }
 
-#if 1
+#if defined(TEST_MISC_OTHER_ENDIAN_BEHAVIOURS)
 
 namespace {
 
-using namespace boost::ut::literals;
-using namespace boost::ut::operators::terse;
-using namespace boost::ut::bdd;
-using namespace boost::ut;
+//using namespace boost::ut::literals;
+//using namespace boost::ut::operators::terse;
+//using namespace boost::ut;
+
+// The boost::ut::operators seem to interfere with the OtherEndian operators
+// More work required to determine what's going on
 
 void testMisc()
 {
@@ -85,91 +90,104 @@ void testMisc()
   )";
 }
 
+} // anonymous namespace
+
+#endif
+
 void testStorage()
 {
   /////////////////////////////////////////////////////////////////////////////
 
-  "ERD-ENDIAN-0001: endian::ReverseBytes reverses the byte ordering of the underlying data"_test
-    = [] <typename EndianIntegral>(EndianIntegral const testValue)
-  {
-    given("a " + type_support::friendly_name<EndianIntegral>() + " value = " + std::to_string(testValue)) = [&]
-    {
-      when("calling endian::ReverseBytes(value)") = [&]
-      {
-        auto const reversedValue = endian::ReverseBytes(testValue);
+  ut_helper::log(text::concatenate(
+      bold_cyan, "ERD-ENDIAN-0001: endian::ReverseBytes reverses the byte ordering of the underlying data\n", reset));
 
-        then("the resulting byte-ordering should be reversed") = [&]
+  execute(/* test = */ [](auto const testValue) {
+      using EndianIntegral = decltype(testValue);
+
+      given("a " + type_support::friendly_name<EndianIntegral>() + " value = " + std::to_string(testValue)) = [&]
+      {
+        when("calling endian::ReverseBytes(value)") = [&]
         {
-          for (unsigned i = 0 ; i < sizeof(EndianIntegral) ; ++i) {
-            ut::expect(*(reinterpret_cast<uint8_t const *>(&testValue) + i) == *(reinterpret_cast<uint8_t const *>(&reversedValue) + sizeof(EndianIntegral) - 1 - i));
-          }
+          auto const reversedValue = endian::ReverseBytes(testValue);
+
+          then("the resulting byte-ordering should be reversed") = [&]
+          {
+            for (unsigned i = 0 ; i < sizeof(EndianIntegral) ; ++i) {
+              ut::expect(*(reinterpret_cast<uint8_t const *>(&testValue) + i) == *(reinterpret_cast<uint8_t const *>(&reversedValue) + sizeof(EndianIntegral) - 1 - i));
+            }
+          };
         };
       };
-    };
-  } | std::tuple{uint16_t(0x1234UL), uint32_t(0x12345678UL), uint64_t(0xBAADF00DU), int16_t(-1), int32_t(-42), int64_t(0)};
+    },
+    /* testValues = */ uint16_t(0x1234UL), uint32_t(0x12345678UL), uint64_t(0xBAADF00DU), int16_t(-1), int32_t(-42), int64_t(0)
+  );
+
+  ///////////////////////////////////////////////////////////////////////////////
+
+  ut_helper::log(text::concatenate(
+      bold_cyan, "ERD-ENDIAN-0002: endian::OtherEndian integrals encode data in reverse of native byte ordering\n", reset));
+
+  execute(/* test = */ [](auto const testValue) {
+      using EndianIntegral = decltype(testValue);
+
+      given("a " + type_support::friendly_name<EndianIntegral>() + " value = " + std::to_string(testValue)) = [&]
+      {
+        when("the value is assigned to an equivalent endian::OtherEndian integral") = [&]
+        {
+          endian::OtherEndian<EndianIntegral> other = testValue;
+
+          then("the byte-ordering should be reversed") = [&]
+          {
+            EndianIntegral const encoded = other.getEncodedValue();
+            ut::expect(encoded == endian::ReverseBytes(testValue));
+            ut::expect(endian::ReverseBytes(encoded) == testValue);
+          };
+        };
+      };
+    },
+    /* testValues = */ uint16_t(42), uint32_t(42), uint64_t(0xBAADF00DU), int16_t(-1), int32_t(-42), int64_t(0)
+  );
 
   /////////////////////////////////////////////////////////////////////////////
 
-  "ERD-ENDIAN-0002: endian::OtherEndian integrals encode data in reverse of native byte ordering"_test
-    = [] <typename EndianIntegral>(EndianIntegral const testValue)
-  {
-    given("a " + type_support::friendly_name<EndianIntegral>() + " value = " + std::to_string(testValue)) = [&]
-    {
-      when("the value is assigned to an equivalent endian::OtherEndian integral") = [&]
-      {
-        endian::OtherEndian<EndianIntegral> other = testValue;
+  ut_helper::log(text::concatenate(
+      bold_cyan, "ERD-ENDIAN-0003: endian::OtherEndian integrals can be used to transport data between native integrals", reset));
 
-        then("the byte-ordering should be reversed") = [&]
+  execute(/* test = */ [](auto const testValue) {
+      using EndianIntegral = decltype(testValue);
+      given("a " + type_support::friendly_name<EndianIntegral>() + " value = " + std::to_string(testValue)) = [&]
+      {
+        when("the value is assigned to an endian::OtherEndian, and then from this intermediate back to a second native integral") = [&]
         {
-          EndianIntegral const encoded = other.getEncodedValue();
-          ut::expect(encoded == endian::ReverseBytes(testValue));
-          ut::expect(endian::ReverseBytes(encoded) == testValue);
+          endian::OtherEndian<EndianIntegral> const transport = testValue;
+
+          // Define an alias for the appropriate signed / unsigned 64-bit integral to use as template argument to endian::OtherEndian
+          using xint64_t = std::conditional_t<std::is_signed_v<EndianIntegral>, int64_t, uint64_t>;
+
+          // Transport via a "wide" endian::OtherEndian should not affect the underlying data
+          endian::OtherEndian<xint64_t> transport2 = testValue;
+
+          then("this second value should equal the original value") = [&]
+          {
+            // compare after back assignment
+
+            std::remove_const_t<EndianIntegral> receivedValue = transport;
+            ut::expect(receivedValue == testValue);
+            receivedValue = transport2;
+            ut::expect(receivedValue == testValue);
+
+            // compare after implicit conversion
+
+            ut::expect(transport == testValue);
+            ut::expect(transport2 == testValue);
+
+          };
         };
       };
-    };
-  } | std::tuple{uint16_t(42), uint32_t(42), uint64_t(0xBAADF00DU), int16_t(-1), int32_t(-42), int64_t(0)};
-
-  /////////////////////////////////////////////////////////////////////////////
-
-  "ERD-ENDIAN-0003: endian::OtherEndian integrals can be used to transport data between native integrals"_test
-    = [] <typename EndianIntegral>(EndianIntegral const testValue)
-  {
-    given("a " + type_support::friendly_name<EndianIntegral>() + " value = " + std::to_string(testValue)) = [&]
-    {
-      when("the value is assigned to an endian::OtherEndian, and then from this intermediate back to a second native integral") = [&]
-      {
-        endian::OtherEndian<EndianIntegral> const transport = testValue;
-
-        // Define an alias for the appropriate signed / unsigned 64-bit integral to use as template argument to endian::OtherEndian
-        using xint64_t = std::conditional_t<std::is_signed_v<EndianIntegral>, int64_t, uint64_t>;
-
-        // Transport via a "wide" endian::OtherEndian should not affect the underlying data
-        endian::OtherEndian<xint64_t> transport2 = testValue;
-
-        then("this second value should equal the original value") = [&]
-        {
-          // compare after back assignment
-
-          EndianIntegral receivedValue = transport;
-          ut::expect(receivedValue == testValue);
-          receivedValue = transport2;
-          ut::expect(receivedValue == testValue);
-
-          // compare after implicit conversion
-
-          ut::expect(transport == testValue);
-          ut::expect(transport2 == testValue);
-
-        };
-      };
-    };
-  } | std::tuple{uint16_t(42), uint32_t(42), uint64_t(0xBAADF00DU), int16_t(-1), int32_t(-42), int64_t(0)};
-
+    },
+    /* testValues = */ uint16_t(42), uint32_t(42), uint64_t(0xBAADF00DU), int16_t(-1), int32_t(-42), int64_t(0)
+  );
 }
-
-} // anonymous namespace
-
-#endif
 
 void testAddition(auto && args)
 {
@@ -373,7 +391,7 @@ void testModulo(auto && args)
   );
 }
 
-#if 0
+#if 1
 
 void testBitwiseOr(auto && args)
 {
@@ -477,7 +495,7 @@ int main() {
 
   auto const args = std::tuple_cat(smallValuePairs, zeroValuePairs, miscPairs);
   auto const divisionArgs = std::tuple_cat(smallValuePairs, miscPairs);
-  //auto const bitwiseArgs = std::tuple_cat(smallValuePairs, zeroValuePairs); // Types must be the same rank
+  auto const bitwiseArgs = std::tuple_cat(smallValuePairs, zeroValuePairs); // Types must be the same rank
 
   /////////////////////////////////////////////////////////////////////////////
 
@@ -495,11 +513,13 @@ int main() {
 
   // Bitwise Operations
 
-  //testBitwiseOr(bitwiseArgs);
+  testBitwiseOr(bitwiseArgs);
 
   // Misc
 
+#if defined(TEST_MISC_OTHER_ENDIAN_BEHAVIOURS)
   testMisc();
+#endif
 
   return 0;
 }
