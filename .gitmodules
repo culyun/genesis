@@ -1,3 +1,6 @@
 [submodule "ut"]
 	path = ut
 	url = https://github.com/boost-ext/ut.git
+[submodule "operators"]
+	path = operators
+	url = https://github.com/taocpp/operators.git
