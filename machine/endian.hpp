@@ -43,7 +43,8 @@ template<typename StorageType>
 requires EndianIntegral<StorageType>
 class OtherEndian:
   tao::operators::andable< OtherEndian<StorageType>, StorageType >,
-  tao::operators::orable< OtherEndian<StorageType>, StorageType >
+  tao::operators::orable< OtherEndian<StorageType>, StorageType >,
+  tao::operators::xorable< OtherEndian<StorageType>, StorageType >
 {
 private:
   StorageType value = 0;
@@ -181,8 +182,14 @@ public:
   }
 
   // Bitwise XOR
-  OtherEndian operator^(OtherEndian const & rhs) const {
-    return value ^ rhs.value;
+  OtherEndian & operator^=(OtherEndian const & rhs) {
+    value ^= rhs.value;
+    return *this;
+  }
+
+  OtherEndian & operator^=(StorageType const & rhs) {
+    value ^= ReverseBytes(rhs);
+    return *this;
   }
 
   // Left Bit-Shift
