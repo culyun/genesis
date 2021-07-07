@@ -59,35 +59,35 @@ constexpr std::string_view name() {
 template <typename T>
 constexpr std::string friendly_name() {
 
-  if constexpr (std::is_same_v<T, uint8_t>) {
+  if constexpr (std::is_same_v<std::remove_cv_t<T>, uint8_t>) {
     return "uint8_t";
   }
 
-  if constexpr (std::is_same_v<T, uint16_t>) {
+  if constexpr (std::is_same_v<std::remove_cv_t<T>, uint16_t>) {
     return "uint16_t";
   }
 
-  if constexpr (std::is_same_v<T, uint32_t>) {
+  if constexpr (std::is_same_v<std::remove_cv_t<T>, uint32_t>) {
     return "uint32_t";
   }
 
-  if constexpr (std::is_same_v<T, uint64_t>) {
+  if constexpr (std::is_same_v<std::remove_cv_t<T>, uint64_t>) {
     return "uint64_t";
   }
 
-  if constexpr (std::is_same_v<T, int8_t>) {
+  if constexpr (std::is_same_v<std::remove_cv_t<T>, int8_t>) {
     return "int8_t";
   }
 
-  if constexpr (std::is_same_v<T, int16_t>) {
+  if constexpr (std::is_same_v<std::remove_cv_t<T>, int16_t>) {
     return "int16_t";
   }
 
-  if constexpr (std::is_same_v<T, int32_t>) {
+  if constexpr (std::is_same_v<std::remove_cv_t<T>, int32_t>) {
     return "int32_t";
   }
 
-  if constexpr (std::is_same_v<T, int64_t>) {
+  if constexpr (std::is_same_v<std::remove_cv_t<T>, int64_t>) {
     return "int64_t";
   }
 
