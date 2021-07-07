@@ -9,6 +9,8 @@
 #include <concepts>
 #include <utility>
 
+#include <tao/operators.hpp>
+
 namespace culyun { namespace endian {
 
 template<typename StorageType>
@@ -39,7 +41,8 @@ int64_t ReverseBytes<int64_t>(int64_t const & value) { return __builtin_bswap64(
 
 template<typename StorageType>
 requires EndianIntegral<StorageType>
-class OtherEndian
+class OtherEndian:
+  tao::operators::orable< OtherEndian<StorageType>, StorageType >
 {
 private:
   StorageType value = 0;
@@ -160,8 +163,14 @@ public:
   }
 
   // Bitwise OR
-  OtherEndian operator|(OtherEndian const & rhs) const {
-    return value | rhs.value;
+  OtherEndian & operator|=(OtherEndian const & rhs) {
+    value |= rhs.value;
+    return *this;
+  }
+
+  OtherEndian & operator|=(StorageType const & rhs) {
+    value |= ReverseBytes(rhs);
+    return *this;
   }
 
   // Bitwise XOR
