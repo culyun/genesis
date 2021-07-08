@@ -189,7 +189,7 @@ void testStorage()
   );
 }
 
-void testAddition(auto && args)
+void testAddition(auto && argSequence)
 {
   ut_helper::log(text::concatenate(
       bold_cyan, "ERD-ENDIAN-0137: endian::OtherEndian integrals can perform addition operations", reset));
@@ -232,11 +232,11 @@ void testAddition(auto && args)
       oeSum = endian::OtherEndian<decltype(addend)>(addend) + endian::OtherEndian<decltype(augend)>(augend);
       ut::expect(sum == oeSum);
     },
-    args
+    argSequence
   );
 }
 
-void testSubtraction(auto && args)
+void testSubtraction(auto && argSequence)
 {
   ut_helper::log(text::concatenate(
       bold_cyan, "ERD-ENDIAN-0138: endian::OtherEndian integrals can perform subtraction operations", reset));
@@ -268,11 +268,11 @@ void testSubtraction(auto && args)
       oeDifference = endian::OtherEndian<decltype(minuend)>(minuend) - endian::OtherEndian<decltype(subtrahend)>(subtrahend);
       ut::expect(difference == oeDifference);
     },
-    args
+    argSequence
   );
 }
 
-void testMultiplication(auto && args)
+void testMultiplication(auto && argSequence)
 {
   ut_helper::log(text::concatenate(
       bold_cyan, "ERD-ENDIAN-0139: endian::OtherEndian integrals can perform multiplication operations", reset));
@@ -315,11 +315,11 @@ void testMultiplication(auto && args)
       oeProduct = endian::OtherEndian<decltype(multiplier)>(multiplier)  * endian::OtherEndian<decltype(multiplicand)>(multiplicand);
       ut::expect(product == oeProduct);
     },
-    args
+    argSequence
   );
 }
 
-void testDivision(auto && args)
+void testDivision(auto && argSequence)
 {
   ut_helper::log(text::concatenate(
       bold_cyan, "ERD-ENDIAN-0140: endian::OtherEndian integrals can perform division operations", reset));
@@ -351,11 +351,11 @@ void testDivision(auto && args)
       oeQuotient = endian::OtherEndian<decltype(dividend)>(dividend) / endian::OtherEndian<decltype(divisor)>(divisor);
       ut::expect(quotient == oeQuotient);
     },
-    args
+    argSequence
   );
 }
 
-void testModulo(auto && args)
+void testModulo(auto && argSequence)
 {
   ut_helper::log(text::concatenate(
       bold_cyan, "ERD-ENDIAN-0141: endian::OtherEndian integrals can perform modulo operations", reset));
@@ -387,13 +387,13 @@ void testModulo(auto && args)
       oeRemainder = endian::OtherEndian<decltype(dividend)>(dividend) % endian::OtherEndian<decltype(modulus)>(modulus);
       ut::expect(remainder == oeRemainder);
     },
-    args
+    argSequence
   );
 }
 
 #if 1
 
-void testBitwiseAnd(auto && args)
+void testBitwiseAnd(auto && argSequence)
 {
   ut_helper::log(text::concatenate(
       bold_cyan, "ERD-ENDIAN-0142: endian::OtherEndian integrals can perform bitwise AND operations", reset));
@@ -436,11 +436,11 @@ void testBitwiseAnd(auto && args)
       oeResult = endian::OtherEndian<decltype(rhs)>(rhs) & endian::OtherEndian<decltype(lhs)>(lhs);
       ut::expect(result == oeResult);
     },
-    args
+    argSequence
   );
 }
 
-void testBitwiseOr(auto && args)
+void testBitwiseOr(auto && argSequence)
 {
   ut_helper::log(text::concatenate(
       bold_cyan, "ERD-ENDIAN-0143: endian::OtherEndian integrals can perform bitwise OR operations", reset));
@@ -483,11 +483,11 @@ void testBitwiseOr(auto && args)
       oeResult = endian::OtherEndian<decltype(rhs)>(rhs) | endian::OtherEndian<decltype(lhs)>(lhs);
       ut::expect(result == oeResult);
     },
-    args
+    argSequence
   );
 }
 
-void testBitwiseXOr(auto && args)
+void testBitwiseXOr(auto && argSequence)
 {
   ut_helper::log(text::concatenate(
       bold_cyan, "ERD-ENDIAN-0144: endian::OtherEndian integrals can perform bitwise XOR operations", reset));
@@ -530,7 +530,32 @@ void testBitwiseXOr(auto && args)
       oeResult = endian::OtherEndian<decltype(rhs)>(rhs) ^ endian::OtherEndian<decltype(lhs)>(lhs);
       ut::expect(result == oeResult);
     },
-    args
+    argSequence
+  );
+}
+
+void testBitwiseNot(auto && argSequence)
+{
+  ut_helper::log(text::concatenate(
+      bold_cyan, "ERD-ENDIAN-0145: endian::OtherEndian integrals can perform bitwise NOT operations", reset));
+
+  execute1(/* test = */ [](auto value) {
+      decltype(value) result = ~value;
+
+      ut_helper::log(text::concatenate(
+          ansi_code::bold_red, " ~" ,
+          ansi_code::green, type_support::friendly_name<decltype(value)>() , "(" , std::to_string(value) , ")" ,
+          ansi_code::bold_red, " = " ,
+          ansi_code::yellow , type_support::friendly_name<decltype(result)>() , "(" , std::to_string(result) , ")\n" ,
+          ansi_code::reset
+      ));
+
+      decltype(result) oeResult;
+
+      oeResult = ~endian::OtherEndian<decltype(value)>(value);
+      ut::expect(result == oeResult);
+    },
+    argSequence
   );
 }
 
@@ -587,6 +612,21 @@ int main() {
       std::tuple{1, int16_t(2)}
   };
 
+  auto const miscValues = std::tuple{
+    std::numeric_limits<int>::min(),
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    std::numeric_limits<int>::max(),
+    int32_t(0x0000005A),
+    int32_t(0x5A000000),
+    int16_t(0xF0),
+    int16_t(0x0F),
+    uint64_t(0xAABBCCDDDDCCBBAA)
+  };
+
   auto const args = std::tuple_cat(smallValuePairs, zeroValuePairs, miscPairs);
   auto const divisionArgs = std::tuple_cat(smallValuePairs, miscPairs);
   auto const bitwiseArgs = std::tuple_cat(smallValuePairs, zeroValuePairs); // Types must be the same rank
@@ -610,6 +650,7 @@ int main() {
   testBitwiseAnd(bitwiseArgs);
   testBitwiseOr(bitwiseArgs);
   testBitwiseXOr(bitwiseArgs);
+  testBitwiseNot(miscValues);
 
   // Misc
 
