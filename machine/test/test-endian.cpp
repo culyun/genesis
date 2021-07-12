@@ -4,6 +4,10 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <string_view>
+
+#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include <boost/ut.hpp>
 
@@ -404,11 +408,11 @@ void testBitwiseAnd(auto && argSequence)
       auto result = lhs & rhs;
 
       ut_helper::log(text::concatenate(
-          ansi_code::green, type_support::friendly_name<decltype(lhs)>() , "(" , std::to_string(lhs) , ")" ,
+          ansi_code::green, type_support::friendly_name<decltype(lhs)>() , "(" , text::toHex(lhs) , ")" ,
           ansi_code::bold_red, " & " ,
-          ansi_code::cyan , type_support::friendly_name<decltype(rhs)>() , "(" , std::to_string(rhs) , ")" ,
+          ansi_code::cyan , type_support::friendly_name<decltype(rhs)>() , "(" , text::toHex(rhs) , ")" ,
           ansi_code::bold_red, " = " ,
-          ansi_code::yellow , type_support::friendly_name<decltype(result)>() , "(" , std::to_string(result) , ")\n" ,
+          ansi_code::yellow , type_support::friendly_name<decltype(result)>() , "(" , text::toHex(result) , ")\n" ,
           ansi_code::reset
       ));
 
@@ -451,11 +455,11 @@ void testBitwiseOr(auto && argSequence)
       auto result = lhs | rhs;
 
       ut_helper::log(text::concatenate(
-          ansi_code::green, type_support::friendly_name<decltype(lhs)>() , "(" , std::to_string(lhs) , ")" ,
+          ansi_code::green, type_support::friendly_name<decltype(lhs)>() , "(" , text::toHex(lhs) , ")" ,
           ansi_code::bold_red, " | " ,
-          ansi_code::cyan , type_support::friendly_name<decltype(rhs)>() , "(" , std::to_string(rhs) , ")" ,
+          ansi_code::cyan , type_support::friendly_name<decltype(rhs)>() , "(" , text::toHex(rhs) , ")" ,
           ansi_code::bold_red, " = " ,
-          ansi_code::yellow , type_support::friendly_name<decltype(result)>() , "(" , std::to_string(result) , ")\n" ,
+          ansi_code::yellow , type_support::friendly_name<decltype(result)>() , "(" , text::toHex(result) , ")\n" ,
           ansi_code::reset
       ));
 
@@ -498,11 +502,11 @@ void testBitwiseXOr(auto && argSequence)
       auto result = lhs ^ rhs;
 
       ut_helper::log(text::concatenate(
-          ansi_code::green, type_support::friendly_name<decltype(lhs)>() , "(" , std::to_string(lhs) , ")" ,
+          ansi_code::green, type_support::friendly_name<decltype(lhs)>() , "(" , text::toHex(lhs) , ")" ,
           ansi_code::bold_red, " ^ " ,
-          ansi_code::cyan , type_support::friendly_name<decltype(rhs)>() , "(" , std::to_string(rhs) , ")" ,
+          ansi_code::cyan , type_support::friendly_name<decltype(rhs)>() , "(" , text::toHex(rhs) , ")" ,
           ansi_code::bold_red, " = " ,
-          ansi_code::yellow , type_support::friendly_name<decltype(result)>() , "(" , std::to_string(result) , ")\n" ,
+          ansi_code::yellow , type_support::friendly_name<decltype(result)>() , "(" , text::toHex(result) , ")\n" ,
           ansi_code::reset
       ));
 
@@ -544,9 +548,9 @@ void testBitwiseNot(auto && argSequence)
 
       ut_helper::log(text::concatenate(
           ansi_code::bold_red, " ~" ,
-          ansi_code::green, type_support::friendly_name<decltype(value)>() , "(" , std::to_string(value) , ")" ,
+          ansi_code::green, type_support::friendly_name<decltype(value)>() , "(" , text::toHex(value) , ")" ,
           ansi_code::bold_red, " = " ,
-          ansi_code::yellow , type_support::friendly_name<decltype(result)>() , "(" , std::to_string(result) , ")\n" ,
+          ansi_code::yellow , type_support::friendly_name<decltype(result)>() , "(" , text::toHex(result) , ")\n" ,
           ansi_code::reset
       ));
 
@@ -561,8 +565,8 @@ void testBitwiseNot(auto && argSequence)
 
 #endif
 
-int main() {
-
+int main()
+{
   auto const smallValuePairs = std::tuple{
       std::tuple{0, std::numeric_limits<int>::min(), 0},
       std::tuple{0, -2},

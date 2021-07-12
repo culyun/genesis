@@ -5,7 +5,43 @@ set -e
 SCRIPT_PATH="${0%/*}"
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-#time g++ -Wall -std=c++20 "${REPO_ROOT}/main/main.cpp" -o "${REPO_ROOT}/test-machine" && "${REPO_ROOT}/test-machine"
+###############################################################################
 
-time g++ -Wall -Wpessimizing-move -Wredundant-move -std=c++20 -I "${REPO_ROOT}" -I "${REPO_ROOT}/ut/include" -I "${REPO_ROOT}/operators/include" "${REPO_ROOT}/machine/test/test-endian.cpp" -o "${REPO_ROOT}/test-endian" && "${REPO_ROOT}/test-endian"
+function build_libfmt()
+{
+  cd "${REPO_ROOT}/fmt"
+  cmake -G Ninja
+  ninja
+  rm .ninja_deps .ninja_log build.ninja
+  cd -
+}
 
+###############################################################################
+
+function main()
+{
+  if [[ ! -r "${REPO_ROOT}/fmt/libfmt.a" ]] ; then
+    build_libfmt
+  fi
+
+  time g++ -Wall -Wpessimizing-move -Wredundant-move -std=c++20 -fdiagnostics-color=always \
+    -I "${REPO_ROOT}" \
+    -I "${REPO_ROOT}/ut/include"  \
+    -I "${REPO_ROOT}/operators/include" \
+    -I "${REPO_ROOT}/fmt/include" \
+    -I "${REPO_ROOT}/static_string/include" \
+    -I "${REPO_ROOT}/static-string-cpp" \
+    \
+    "${REPO_ROOT}/machine/test/test-endian.cpp" \
+    -o "${REPO_ROOT}/test-endian" \
+    \
+    -L "${REPO_ROOT}" \
+    -L "${REPO_ROOT}/fmt" \
+    -l "fmt" \
+    \
+    && "${REPO_ROOT}/test-endian"
+}
+
+###############################################################################
+
+main "$@"
