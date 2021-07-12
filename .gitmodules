@@ -4,3 +4,6 @@
 [submodule "operators"]
 	path = operators
 	url = https://github.com/taocpp/operators.git
+[submodule "fmt"]
+	path = fmt
+	url = https://github.com/fmtlib/fmt.git
