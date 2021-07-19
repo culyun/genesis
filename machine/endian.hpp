@@ -42,9 +42,7 @@ int64_t ReverseBytes<int64_t>(int64_t const & value) { return __builtin_bswap64(
 template<typename StorageType>
 requires EndianIntegral<StorageType>
 class OtherEndian:
-  tao::operators::andable< OtherEndian<StorageType>, StorageType >,
-  tao::operators::orable< OtherEndian<StorageType>, StorageType >,
-  tao::operators::xorable< OtherEndian<StorageType>, StorageType >
+  tao::operators::bitwise< OtherEndian<StorageType>, StorageType >
 {
 private:
   StorageType value = 0;
