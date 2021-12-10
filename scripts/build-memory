@@ -33,14 +33,15 @@ function main()
     -I "${REPO_ROOT}/static-string-cpp" \
     -I "${REPO_ROOT}/misc" \
     \
-    "${REPO_ROOT}/machine/test/test-endian.cpp" \
-    -o "${REPO_ROOT}/test-endian" \
+    "${REPO_ROOT}/memory/small-pool.cpp" \
+    "${REPO_ROOT}/memory/test/test-memory.cpp" \
+    -o "${REPO_ROOT}/test-memory" \
     \
     -L "${REPO_ROOT}" \
     -L "${REPO_ROOT}/fmt" \
     -l "fmt" \
     \
-    && "${REPO_ROOT}/test-endian"
+    && "${REPO_ROOT}/test-memory"
 }
 
 ###############################################################################
