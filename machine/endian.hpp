@@ -9,6 +9,8 @@
 #include <concepts>
 #include <utility>
 
+#include <iostream>
+
 #include <tao/operators.hpp>
 
 namespace culyun { namespace endian {
@@ -42,6 +44,8 @@ int64_t ReverseBytes<int64_t>(int64_t const & value) { return __builtin_bswap64(
 template<typename StorageType>
 requires EndianIntegral<StorageType>
 class OtherEndian:
+  //tao::operators::left_shiftable< OtherEndian<StorageType> >,
+  //..tao::operators::left_shiftable< OtherEndian<StorageType>, int >,
   tao::operators::bitwise< OtherEndian<StorageType>, StorageType >
 {
 private:
@@ -192,26 +196,47 @@ public:
 
   // Left Bit-Shift
 
-  OtherEndian operator<<(std::integral auto const & shifts) const {
+  //OtherEndian operator<<(std::integral auto const & shifts) const {
+  //  if (std::cmp_less(shifts, 1)) return *this;
+  //  if (std::cmp_greater_equal(shifts, sizeof(StorageType) * CHAR_BIT)) return 0;
+  //  return getNativeValue() << shifts;
+  //}
+
+  //OtherEndian operator<<(OtherEndian const & shifts) const {
+  //  return operator<<(static_cast<int const>(shifts));
+  //}
+
+  OtherEndian & operator<<=(int const & shifts) {
+    int64_t fred = getNativeValue() << shifts;
+    std::cout << "SWS fred = " << fred << std::endl;
+
+
     if (std::cmp_less(shifts, 1)) return *this;
-    if (std::cmp_greater_equal(shifts, sizeof(StorageType) * CHAR_BIT)) return 0;
-    return getNativeValue() << shifts;
+    if (std::cmp_greater_equal(shifts, sizeof(StorageType) * CHAR_BIT)) return *this;
+    
+
+    setNativeValue(getNativeValue() << shifts);
+
+    
+
+    return *this;
   }
 
-  OtherEndian operator<<(OtherEndian const & shifts) const {
-    return operator<<(static_cast<int const>(shifts));
+  OtherEndian & operator<<=(OtherEndian const & shifts) {
+    return operator<<=(static_cast<int const>(shifts));
   }
 
   // Right Bit-Shift
 
-  OtherEndian operator>>(std::integral auto const & shifts) const {
+  OtherEndian & operator>>=(int const & shifts) {
     if (std::cmp_less(shifts, 1)) return *this;
-    if (std::cmp_greater_equal(shifts, sizeof(StorageType) * CHAR_BIT)) return 0;
-    return getNativeValue() >> shifts;
+    if (std::cmp_greater_equal(shifts, sizeof(StorageType) * CHAR_BIT)) return *this;
+    setNativeValue(getNativeValue() >> shifts);
+    return *this;
   }
 
-  OtherEndian operator>>(OtherEndian const & shifts) const {
-    return operator>>(static_cast<int const>(shifts));
+  OtherEndian & operator>>=(OtherEndian const & shifts) {
+    return operator>>=(static_cast<int const>(shifts));
   }
 };
 

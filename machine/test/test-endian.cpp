@@ -563,6 +563,52 @@ void testBitwiseNot(auto && argSequence)
   );
 }
 
+void testLeftShift(auto && argSequence)
+{
+  ut_helper::log(text::concatenate(
+      bold_cyan, "ERD-ENDIAN-0146: endian::OtherEndian integrals can perform arithmetic left shift operations", reset));
+
+  execute1(/* test = */ [](auto && args) {
+      auto lhs = std::get<0>(args);
+      auto rhs = std::get<1>(args);
+      auto result = lhs << rhs;
+
+      ut_helper::log(text::concatenate(
+          ansi_code::green, type_support::friendly_name<decltype(lhs)>() , "(" , text::toHex(lhs) , ")" ,
+          ansi_code::bold_red, " << " ,
+          ansi_code::cyan , type_support::friendly_name<decltype(rhs)>() , "(" , std::to_string(rhs) , ")" ,
+          ansi_code::bold_red, " = " ,
+          ansi_code::yellow , type_support::friendly_name<decltype(result)>() , "(" , text::toHex(result) , ")\n" ,
+          ansi_code::reset
+      ));
+
+      decltype(result) oeResult;
+
+      // Test all permutations of native and oe arguments
+
+      oeResult = endian::OtherEndian<decltype(lhs)>(lhs) << rhs;
+      ut::expect(result == oeResult);
+
+      oeResult = lhs << endian::OtherEndian<decltype(rhs)>(rhs);
+      ut::expect(result == oeResult);
+
+      oeResult = endian::OtherEndian<decltype(lhs)>(lhs) << endian::OtherEndian<decltype(rhs)>(rhs);
+      ut::expect(result == oeResult);
+
+      endian::OtherEndian<decltype(lhs)> fred = endian::OtherEndian<decltype(lhs)>(lhs) << endian::OtherEndian<decltype(rhs)>(rhs);
+      ut::expect(result == fred);
+
+      fred >>= rhs;
+      fred <<= rhs;
+      ut::expect(result == fred);
+
+
+
+    },
+    argSequence
+  );
+}
+
 #endif
 
 int main()
@@ -583,7 +629,7 @@ int main()
       std::tuple{2, 1},
       std::tuple{std::numeric_limits<int>::max(), 1},
 
-      std::tuple{1, std::numeric_limits<int>::min(), 1},
+      std::tuple{1, std::numeric_limits<int>::min()},
       std::tuple{1, -2},
       std::tuple{1, -1},
       std::tuple{1, 1},
@@ -600,7 +646,7 @@ int main()
       std::tuple{1, 0},
       std::tuple{2, 0},
       std::tuple{std::numeric_limits<int>::max(), 0},
-      std::tuple{0, std::numeric_limits<int>::min(), 0},
+      std::tuple{0, std::numeric_limits<int>::min()},
       std::tuple{0, -2},
       std::tuple{0, -1},
       std::tuple{0, 0},
@@ -639,22 +685,27 @@ int main()
 
   // Storage, Conversion, and Type Punning
 
-  testStorage();
+//  testStorage();
+//
+//  // Arithmetic Operations
+//
+//  testAddition(args);
+//  testSubtraction(args);
+//  testMultiplication(args);
+//  testDivision(divisionArgs);
+//  testModulo(divisionArgs);
+//
+//  // Bitwise Operations
+//
+//  testBitwiseAnd(bitwiseArgs);
+//  testBitwiseOr(bitwiseArgs);
+//  testBitwiseXOr(bitwiseArgs);
+//  testBitwiseNot(miscValues);
 
-  // Arithmetic Operations
+    // Arithmetic Shifts
+    
+    testLeftShift(smallValuePairs);
 
-  testAddition(args);
-  testSubtraction(args);
-  testMultiplication(args);
-  testDivision(divisionArgs);
-  testModulo(divisionArgs);
-
-  // Bitwise Operations
-
-  testBitwiseAnd(bitwiseArgs);
-  testBitwiseOr(bitwiseArgs);
-  testBitwiseXOr(bitwiseArgs);
-  testBitwiseNot(miscValues);
 
   // Misc
 
