@@ -685,27 +685,26 @@ int main()
 
   // Storage, Conversion, and Type Punning
 
-//  testStorage();
-//
-//  // Arithmetic Operations
-//
-//  testAddition(args);
-//  testSubtraction(args);
-//  testMultiplication(args);
-//  testDivision(divisionArgs);
-//  testModulo(divisionArgs);
-//
-//  // Bitwise Operations
-//
-//  testBitwiseAnd(bitwiseArgs);
-//  testBitwiseOr(bitwiseArgs);
-//  testBitwiseXOr(bitwiseArgs);
-//  testBitwiseNot(miscValues);
+  testStorage();
 
-    // Arithmetic Shifts
-    
-    testLeftShift(smallValuePairs);
+  // Arithmetic Operations
 
+  testAddition(args);
+  testSubtraction(args);
+  testMultiplication(args);
+  testDivision(divisionArgs);
+  testModulo(divisionArgs);
+
+  // Bitwise Operations
+
+  testBitwiseAnd(bitwiseArgs);
+  testBitwiseOr(bitwiseArgs);
+  testBitwiseXOr(bitwiseArgs);
+  testBitwiseNot(miscValues);
+
+  // Arithmetic Shifts
+
+  testLeftShift(smallValuePairs);
 
   // Misc
 
