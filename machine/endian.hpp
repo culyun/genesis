@@ -237,7 +237,7 @@ auto GetNativeValue(IntegralType const & value)
   // Build time errors
 
   static_assert(EndianIntegral<IntegralType> || OtherEndianType<IntegralType>,
-                "\n\n\33[1;31mError: Supplied argument is not representable as an Endian Integral!\33[0m\n\n");
+                "\n\n\\33[1;31mError: Supplied argument is not representable as an Endian Integral!\\33[0m\n\n");
 }
 
 template <typename IntegralType>
@@ -254,7 +254,7 @@ auto GetEncodedValue(IntegralType const & value)
   // Build time errors
 
   static_assert((EndianIntegral<IntegralType> || OtherEndianType<IntegralType>),
-                "\n\n\33[1;31mError: Supplied argument is not representable as an Endian Integral!\33[0m\n\n");
+                "\n\n\\33[1;31mError: Supplied argument is not representable as an Endian Integral!\\33[0m\n\n");
 }
 
 template <typename IntegralType>
@@ -279,7 +279,7 @@ auto GetBigEndianValue(IntegralType const & value)
   // Build time errors
 
   static_assert(EndianIntegral<IntegralType> || OtherEndianType<IntegralType>,
-                "\n\n\33[1;31mError: Supplied argument is not representable as a Big-Endian Integral!\33[0m\n\n");
+                "\n\n\\33[1;31mError: Supplied argument is not representable as a Big-Endian Integral!\\33[0m\n\n");
 }
 
 template <typename IntegralType>
@@ -304,7 +304,7 @@ auto GetLittleEndianValue(IntegralType const & value)
   // Build time errors
 
   static_assert(EndianIntegral<IntegralType> || OtherEndianType<IntegralType>,
-                "\n\n\33[1;31mError: Supplied argument is not representable as a Little-Endian Integral!\33[0m\n\n");
+                "\n\n\\33[1;31mError: Supplied argument is not representable as a Little-Endian Integral!\\33[0m\n\n");
 }
 
 }} // namespace culyun::endian

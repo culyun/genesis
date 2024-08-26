@@ -52,6 +52,8 @@ public:
   auto on(ut::events::exception exception) -> void { Base::on(exception); }
 
   auto on(ut::events::summary summary) -> void { Base::on(summary); }
+
+  auto on(ut::events::run_begin) -> void {}
 };
 
 } // namespace ut_helper
